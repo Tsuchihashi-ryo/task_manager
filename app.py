@@ -11,6 +11,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Disable modification trac
 # Initialize SQLAlchemy with the Flask app
 db.init_app(app)
 
+def init_database():
+    """Initializes the database and creates tables if they don't exist."""
+    with app.app_context():
+        # Import models here to ensure they are registered with SQLAlchemy before create_all
+        # This is crucial if models are defined in a separate file (like models.py)
+        # and rely on `db` instance from this file.
+        # However, in our current setup, models.py imports `db` from this file,
+        # and Task is already imported at the top of app.py.
+        # So, direct import here might not be strictly necessary if Task is already in scope
+        # but it's a good practice for clarity or more complex setups.
+        # from models import Task # Task is already imported globally
+        db.create_all()
+
+init_database() # Call the database initialization function once when the app starts
+
 @app.route('/')
 def index():
     """
@@ -409,8 +424,6 @@ def add_task():
 
 if __name__ == '__main__':
     # This block runs only when the script is executed directly (e.g., `python app.py`)
-    with app.app_context():
-        # Create all database tables defined in models.py if they don't exist
-        db.create_all() 
+    # db.create_all() is now handled by init_database() called earlier.
     # Run the Flask development server
     app.run(debug=True) # debug=True enables auto-reloading and debugger
