@@ -260,11 +260,17 @@ button[type="button"]:hover:not(:disabled) {
 /* Specific to active task items for interactivity */
 #active-tasks-ul .task-item {
     background-color: #f9f9f9;
-    margin-bottom: 8px;
+    margin-bottom: 5px; /* Slightly reduce margin to compensate for fixed height */
     border-radius: 4px;
     border-left: 5px solid #007bff; /* Highlight color */
     cursor: pointer; /* Indicate clickable */
     transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    
+    height: 30px; /* Target height to align with Gantt bar visual */
+    padding: 0 10px; /* Adjust padding: 0 top/bottom, 10px left/right */
+    display: flex;
+    align-items: center; /* Vertically center content */
+    overflow: hidden; /* Hide content that overflows the fixed height */
 }
 
 #active-tasks-ul .task-item:hover {
@@ -274,16 +280,20 @@ button[type="button"]:hover:not(:disabled) {
 
 #active-tasks-ul .task-item .task-name {
     font-weight: bold;
+    white-space: nowrap; /* Prevent task name from wrapping */
+    overflow: hidden; /* Hide overflow from task name if too long */
+    text-overflow: ellipsis; /* Add ellipsis if task name is too long */
+    flex-grow: 1; /* Allow task name to take available space */
 }
 #active-tasks-ul .task-item .task-name.minor-task {
     font-weight: normal;
     color: #555;
 }
+
+/* Hide date details in the compact active task list to fit height */
 #active-tasks-ul .task-item .task-limit-date,
 #active-tasks-ul .task-item .task-scheduled-dates {
-    font-size: 0.85em;
-    color: #666;
-    margin-top: 4px;
+    display: none; 
 }
 
 
