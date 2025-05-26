@@ -7,10 +7,43 @@ body {
     line-height: 1.6;
 }
 
+/* --- Header --- */
+#app-header {
+    background-color: #0056b3; /* A darker blue for contrast */
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* position: fixed; /* Uncomment if a fixed header is desired */
+    /* top: 0; */
+    /* left: 0; */
+    /* width: 100%; */
+    /* z-index: 500; /* Ensure it's above other non-popup content */
+}
+
+#app-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: white; /* Ensure h1 text is white */
+}
+
+#header-actions button {
+    background-color: #007bff; /* Standard button blue */
+    border: 1px solid #007bff; /* Optional: add a border */
+}
+
+#header-actions button:hover {
+    background-color: #0069d9;
+}
+
+
 .main-container {
     padding: 20px;
     max-width: 1200px;
     margin: auto;
+    /* margin-top: 70px; /* Add margin if header is fixed to prevent overlap */
 }
 
 /* --- Typography --- */
@@ -140,22 +173,14 @@ button[type="button"]:hover:not(:disabled) {
 
 /* --- Main Layout Areas --- */
 .top-area {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #007bff;
-    display: flex; /* For aligning title and buttons */
-    justify-content: space-between; /* Pushes children to ends */
-    align-items: center; /* Vertically aligns items */
+    /* This area no longer directly holds buttons, so flex properties for button alignment can be removed if they were here */
+    /* It now primarily serves as a container for active-tasks-gantt-container */
+    margin-bottom: 30px; 
+    /* padding-bottom: 20px; /* Original padding, might not be needed or can be adjusted */
+    /* border-bottom: 2px solid #007bff; /* Original border, can be kept or removed */
 }
 
-.top-area-title { /* Optional: for a specific title element if you add one */
-    font-size: 1.5em;
-    color: #0056b3;
-}
-
-.top-area-actions button { /* Style buttons in the top area */
-    margin-left: 10px;
-}
+/* .top-area-title and .top-area-actions are no longer relevant here as buttons moved to #app-header */
 
 
 #active-tasks-gantt-container {
@@ -180,16 +205,18 @@ button[type="button"]:hover:not(:disabled) {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     /* min-height is better for gantt to avoid collapsing when empty */
     min-height: 200px; 
-    /* max-height: 400px; /* Increased max height */ 
-    /* overflow-y: auto; /* Frappe Gantt has its own internal scroll, so this might not be needed or could conflict */
-    display: flex; /* To help center the gantt-target if it's smaller */
+    /* max-height: 400px; /* This can be removed if gantt-target has a fixed height */
+    /* overflow-y: auto; /* Frappe Gantt has its own internal scroll for vertical if tasks exceed height */
+    display: flex; /* To help manage children like title and gantt-target */
     flex-direction: column; /* Stack h3 and gantt-target */
+    width: 100%; /* Ensure gantt-chart-area takes full available width from its flex parent */
 }
 
 #gantt-target {
-    width: 100%;
-    height: 350px; /* Give a specific height for gantt chart */
-    /* Frappe Gantt will fill this div */
+    width: 100%; /* Take full width of its parent container (#gantt-chart-area) */
+    height: 350px; /* Fixed height for the Gantt chart viewport */
+    overflow-x: auto; /* Enable horizontal scrollbar if Frappe Gantt's SVG content overflows */
+    /* background-color: #f0f0f0; /* Optional: for visual debugging */
 }
 
 .bottom-main-container {

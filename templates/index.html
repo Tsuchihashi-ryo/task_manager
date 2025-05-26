@@ -11,9 +11,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
 </head>
 <body>
+    <header id="app-header">
+        <h1>Task Management App</h1>
+        <div id="header-actions">
+            <button id="add-new-task-btn">Add New Task</button>
+            <button id="sort-by-limit-btn">Sort by Limit</button>
+        </div>
+    </header>
     <div class="main-container">
-        <!-- Top Area -->
-        <div class="top-area">
+        <!-- Top Area: Now primarily for task list and Gantt chart -->
+        <div class="top-area"> 
             <div id="active-tasks-gantt-container">
                 <div id="task-list-area">
                     <h2>Active Tasks</h2>
@@ -26,8 +33,7 @@
                     <div id="gantt-target"></div> <!-- Target for Frappe Gantt -->
                 </div>
             </div>
-            <button id="add-new-task-btn">Add new task</button>
-            <button id="sort-by-limit-btn">Sort by Limit</button>
+            <!-- Buttons moved to #app-header -->
         </div>
 
         <!-- Bottom Area (Main Container) -->

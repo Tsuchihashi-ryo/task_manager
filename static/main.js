@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const sortByLimitBtn = document.getElementById('sort-by-limit-btn');
 
     // Gantt Chart Area
-    // const ganttChartList = document.getElementById('simple-gantt-list'); // Removed as it's replaced by gantt-target
     const ganttTarget = document.getElementById('gantt-target');
 
 
@@ -40,6 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Global State Variables ---
     let currentEditTaskDetails = null; // Stores the full details of the task being edited
     let sortableInstance = null;      // To keep track of the SortableJS instance for active tasks
+    let currentGanttInstance = null;  // To store the Frappe Gantt instance
+    const ganttViewModes = ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month']; // Order for zooming
 
     // --- Helper Functions ---
 
@@ -55,18 +56,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Popup Management ---
-    // Generic function to show a popup and the overlay
     function showPopup(popupElement, errorDivElement, formElement) {
         if (popupElement) popupElement.style.display = 'block';
         if (popupOverlay) popupOverlay.style.display = 'block';
-        if (errorDivElement) errorDivElement.textContent = ''; // Clear previous errors
-        if (formElement) formElement.reset(); // Reset form if provided
+        if (errorDivElement) errorDivElement.textContent = ''; 
+        if (formElement) formElement.reset(); 
     }
 
-    // Generic function to hide a popup
     function hidePopup(popupElement) {
         if (popupElement) popupElement.style.display = 'none';
-        // Check if any other popups are open before hiding overlay
         if (addTaskPopup.style.display === 'none' &&
             editTaskPopup.style.display === 'none' &&
             deleteConfirmPopup.style.display === 'none') {
@@ -74,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add Task Popup
     function showAddTaskPopup() {
         showPopup(addTaskPopup, addErrorMessageDiv, addTaskForm);
     }
@@ -82,12 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hidePopup(addTaskPopup);
     }
     
-    // Edit Task Popup
     function updateEditActionButtonsState() {
-        /**
-         * Updates the enabled/disabled state of action buttons (Start, End, Delete)
-         * in the Edit Task popup based on the current task's status.
-         */
         if (!currentEditTaskDetails) return;
         const status = currentEditTaskDetails.status;
         startTaskBtn.disabled = status === 'doing' || status === 'completed';
@@ -96,12 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showEditTaskPopupUI(taskDetails) {
-        /**
-         * Populates and shows the Edit Task popup.
-         * Assumes taskDetails are already fetched and stored in currentEditTaskDetails.
-         */
         currentEditTaskDetails = taskDetails; 
-        // Populate form fields before showing popup
         editTaskIdInput.value = currentEditTaskDetails.id;
         document.getElementById('edit-task-name').value = currentEditTaskDetails.name;
         document.getElementById('edit-task-detail').value = currentEditTaskDetails.detail || "";
@@ -109,18 +96,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-task-scheduled-start-date').value = formatDateTimeForInput(currentEditTaskDetails.scheduled_start_date);
         document.getElementById('edit-task-scheduled-end-date').value = formatDateTimeForInput(currentEditTaskDetails.scheduled_end_date);
         
-        showPopup(editTaskPopup, editErrorMessageDiv, null); // Don't reset form, it's populated
+        showPopup(editTaskPopup, editErrorMessageDiv, null); 
         updateEditActionButtonsState(); 
     }
     function hideEditTaskPopup() {
         hidePopup(editTaskPopup);
-        currentEditTaskDetails = null; // Clear current task details when popup is hidden
+        currentEditTaskDetails = null; 
     }
     
-    // Delete Confirmation Popup
     function showDeleteConfirmPopup(taskId) {
         deleteTaskIdConfirmInput.value = taskId;
-        hideEditTaskPopup(); // Hide edit popup first, then show delete confirm
+        hideEditTaskPopup(); 
         showPopup(deleteConfirmPopup, deleteConfirmErrorMessageDiv, deleteConfirmPopup.querySelector('form'));
     }
     function hideDeleteConfirmPopup() {
@@ -129,11 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- End Popup Management ---
 
     // --- Task Rendering Functions ---
-
-    /**
-     * Renders the list of active tasks in the '#task-list-area'.
-     * Sets up click listeners on each task item to open the edit popup.
-     */
     function renderTasks(tasks) {
         let ul = document.getElementById('active-tasks-ul');
         if (!ul) { 
@@ -195,12 +176,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Renders a graphical Gantt chart using Frappe Gantt library.
-     * @param {Array<Object>} tasks - Array of task objects.
-     */
     function renderGraphicalGantt(tasks) {
-        ganttTarget.innerHTML = ''; // Clear previous Gantt chart
+        ganttTarget.innerHTML = ''; 
+        currentGanttInstance = null; // Clear previous instance reference
 
         const filteredTasks = tasks.filter(task => task.scheduled_start_date && task.scheduled_end_date);
 
@@ -231,11 +209,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // eslint-disable-next-line no-undef
-        const gantt = new Gantt("#gantt-target", ganttTasks, {
+        currentGanttInstance = new Gantt("#gantt-target", ganttTasks, {
             header_height: 50,
             column_width: 30, 
             step: 24, 
-            view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+            view_modes: ganttViewModes, // Use the defined array
             bar_height: 20,
             bar_corner_radius: 3,
             arrow_curve: 5,
@@ -247,11 +225,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 showEditTaskPopupWithDetails(task.id);
             },
         });
+
+        // Add wheel event listener for zoom functionality if not already added
+        // A simple check to prevent adding multiple listeners if this function could be re-called
+        // without the target element being completely replaced.
+        if (ganttTarget && !ganttTarget.dataset.wheelListenerAdded) {
+            ganttTarget.addEventListener('wheel', function(event) {
+                if (event.ctrlKey && currentGanttInstance) {
+                    event.preventDefault();
+    
+                    const currentViewMode = currentGanttInstance.options.view_mode; 
+                    let currentIndex = ganttViewModes.indexOf(currentViewMode);
+    
+                    if (currentIndex === -1) { 
+                        console.warn("Current Gantt view mode not in predefined list. Resetting to default.");
+                        // Attempt to find a similar mode or default to 'Week'
+                        const lowerCaseModes = ganttViewModes.map(m => m.toLowerCase());
+                        const currentLower = currentViewMode.toLowerCase();
+                        currentIndex = lowerCaseModes.indexOf(currentLower);
+                        if(currentIndex === -1) currentIndex = ganttViewModes.indexOf('Week'); // Default if still not found
+                        if(currentIndex === -1) currentIndex = 2; // Absolute fallback to Day if Week is also missing
+                    }
+    
+                    if (event.deltaY < 0) { // Scrolling up (zoom in)
+                        currentIndex--;
+                    } else { // Scrolling down (zoom out)
+                        currentIndex++;
+                    }
+    
+                    // Clamp index to array bounds
+                    if (currentIndex < 0) {
+                        currentIndex = 0;
+                    } else if (currentIndex >= ganttViewModes.length) {
+                        currentIndex = ganttViewModes.length - 1;
+                    }
+    
+                    const newViewMode = ganttViewModes[currentIndex];
+                    if (newViewMode && newViewMode !== currentGanttInstance.options.view_mode) {
+                        currentGanttInstance.change_view_mode(newViewMode);
+                    }
+                }
+            });
+            ganttTarget.dataset.wheelListenerAdded = 'true';
+        }
     }
     
-    /**
-     * Renders the list of completed tasks in '#completed-tasks-list'.
-     */
     function renderCompletedTasks(tasks) {
         completedTasksListArea.innerHTML = ''; 
         if (!tasks || tasks.length === 0) {
@@ -279,9 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
         completedTasksListArea.appendChild(ul);
     }
 
-    /**
-     * Renders the list of deleted tasks in '#deleted-tasks-list'.
-     */
     function renderDeletedTasks(tasks) {
         deletedTasksListArea.innerHTML = ''; 
         if (!tasks || tasks.length === 0) {
@@ -314,12 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- API Call and Data Handling Functions ---
-
-    /**
-     * Helper function to fetch task details and show the edit popup.
-     * Used by both task list item click and Gantt chart click.
-     * @param {string|number} taskId - The ID of the task to fetch and show.
-     */
     async function showEditTaskPopupWithDetails(taskId) {
         editErrorMessageDiv.textContent = ''; 
         try {
@@ -329,17 +338,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const taskDetails = await response.json();
-            showEditTaskPopupUI(taskDetails); // Show popup with populated data
+            showEditTaskPopupUI(taskDetails); 
         } catch (error) {
             console.error('Error fetching task details for popup:', error);
             alert(`Error fetching task details: ${error.message}`);
         }
     }
 
-    /**
-     * Fetches active tasks from the server and renders them.
-     * @param {string} sortBy - The criteria to sort tasks by ('display_order' or 'limit_date').
-     */
     async function fetchAndRenderActiveTasks(sortBy = 'display_order') {
         try {
             const response = await fetch(`/get_tasks?sort_by=${sortBy}`);
@@ -397,9 +402,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Fetches completed tasks from the server and renders them.
-     */
     async function fetchAndRenderCompletedTasks() {
         try {
             const response = await fetch('/get_completed_tasks');
@@ -415,9 +417,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Fetches deleted tasks from the server and renders them.
-     */
     async function fetchAndRenderDeletedTasks() {
         try {
             const response = await fetch('/get_deleted_tasks');
@@ -434,11 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Form Submission Handlers ---
-
-    /**
-     * Handles the submission of the "Add Task" form.
-     * Sends task data to the backend and refreshes the active task list.
-     */
     addTaskForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         addErrorMessageDiv.textContent = ''; 
@@ -481,10 +475,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    /**
-     * Handles the submission of the "Edit Task" form (Save button).
-     * Sends updated task data to the backend and refreshes active tasks.
-     */
     editTaskForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         editErrorMessageDiv.textContent = '';
@@ -526,10 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    /**
-     * Handles the confirmation of task deletion.
-     * Sends delete request to backend and refreshes relevant task lists.
-     */
     confirmDeleteBtn.addEventListener('click', async () => {
         const taskId = deleteTaskIdConfirmInput.value;
         const delete_reason = deleteReasonInput.value;
@@ -546,9 +532,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const err = await response.json();
                 throw err;
             }
-            hideDeleteConfirmPopup(); // Close popup first
-            fetchAndRenderActiveTasks(); // Refresh active list
-            fetchAndRenderDeletedTasks(); // Refresh deleted list
+            hideDeleteConfirmPopup(); 
+            fetchAndRenderActiveTasks(); 
+            fetchAndRenderDeletedTasks(); 
         } catch (error) {
             console.error('Error deleting task:', error);
             deleteConfirmErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
@@ -556,11 +542,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // --- Event Delegation for Restore Buttons ---
-    /**
-     * Handles click events on restore buttons within completed or deleted task lists.
-     * Uses event delegation.
-     * @param {Event} event - The click event.
-     */
     async function handleRestoreTask(event) {
         if (event.target.classList.contains('restore-btn')) {
             const taskId = event.target.dataset.taskId;
@@ -570,12 +551,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch(`/restore_task/${taskId}`, { method: 'POST' });
                 if (!response.ok) {
                     const err = await response.json();
-                    throw err; // Throw to be caught by catch block
+                    throw err; 
                 }
                 const data = await response.json();
-                console.log(data.message); // Log success
+                console.log(data.message); 
 
-                // Refresh all relevant lists to reflect the change
                 fetchAndRenderActiveTasks();
                 fetchAndRenderCompletedTasks();
                 fetchAndRenderDeletedTasks();
@@ -592,7 +572,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cancelEditTaskBtn.addEventListener('click', hideEditTaskPopup);
     cancelDeleteConfirmBtn.addEventListener('click', hideDeleteConfirmPopup);
     
-    // Listener for "Delete" button in Edit Popup
     deleteFromEditBtn.addEventListener('click', () => {
         const taskId = editTaskIdInput.value;
         if (taskId) {
@@ -602,15 +581,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Event Listener for "Sort by Limit" button
     sortByLimitBtn.addEventListener('click', () => {
         fetchAndRenderActiveTasks('limit_date');
     });
 
-    /**
-     * Handles the "Start Task" action from the Edit Task popup.
-     * Updates task status to 'doing' and refreshes UI.
-     */
     startTaskBtn.addEventListener('click', async () => {
         const taskId = editTaskIdInput.value;
         editErrorMessageDiv.textContent = '';
@@ -633,10 +607,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    /**
-     * Handles the "End Task" action from the Edit Task popup.
-     * Updates task status to 'completed', closes popup, and refreshes UI.
-     */
     endTaskBtn.addEventListener('click', async () => {
         const taskId = editTaskIdInput.value;
         editErrorMessageDiv.textContent = '';
@@ -654,20 +624,18 @@ document.addEventListener('DOMContentLoaded', function() {
                  currentEditTaskDetails.status = data.status;
             }
 
-            hideEditTaskPopup(); // Close popup as task is now completed
-            fetchAndRenderActiveTasks(); // Refresh active list (task should disappear)
-            fetchAndRenderCompletedTasks(); // Refresh completed list
+            hideEditTaskPopup(); 
+            fetchAndRenderActiveTasks(); 
+            fetchAndRenderCompletedTasks(); 
         } catch (error) {
             console.error('Error ending task:', error);
             editErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
         }
     });
     
-    // Attach event listeners for restore buttons using delegation
     completedTasksListArea.addEventListener('click', handleRestoreTask);
     deletedTasksListArea.addEventListener('click', handleRestoreTask);
     
-    // Overlay click handler to close any open popup
     if (popupOverlay) {
         popupOverlay.addEventListener('click', () => {
             hideAddTaskPopup();
@@ -677,7 +645,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Initial Data Load ---
-    // Fetch and render all categories of tasks when the page loads.
     fetchAndRenderActiveTasks();
     fetchAndRenderCompletedTasks();
     fetchAndRenderDeletedTasks();
