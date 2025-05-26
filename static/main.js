@@ -169,16 +169,17 @@ document.addEventListener('DOMContentLoaded', function() {
             ul.innerHTML = ''; 
         }
         
+        // Remove any existing "No active tasks" message before rendering new tasks
+        const existingNoTasksMessage = taskListArea.querySelector('p');
+        if (existingNoTasksMessage) {
+            existingNoTasksMessage.remove();
+        }
+
         if (!tasks || tasks.length === 0) {
-            const p = taskListArea.querySelector('p');
-            if (p) p.remove(); // Remove old "no tasks" message if any
             const noTasksMessage = document.createElement('p');
             noTasksMessage.textContent = 'No active tasks.';
-            taskListArea.appendChild(noTasksMessage);
+            taskListArea.appendChild(noTasksMessage); // Append directly to taskListArea
             return;
-        } else {
-             const p = taskListArea.querySelector('p'); // Remove "no tasks" message if it exists
-             if (p) p.remove();
         }
 
         tasks.forEach(task => {
@@ -212,25 +213,37 @@ document.addEventListener('DOMContentLoaded', function() {
             
             li.addEventListener('click', async () => {
                 const taskId = li.dataset.taskId;
-                editErrorMessageDiv.textContent = ''; 
-                try {
-                    const response = await fetch(`/task/${taskId}`);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                    }
-                    const taskDetails = await response.json();
-                    showEditTaskPopupUI(taskDetails); // Show popup with populated data
-                } catch (error) {
-                    console.error('Error fetching task details:', error);
-                    editErrorMessageDiv.textContent = `Error: ${error.message}`; 
-                }
+                showEditTaskPopupWithDetails(taskId);
             });
             ul.appendChild(li);
         });
     }
     
     // --- API Call and Data Handling Functions ---
+
+    /**
+     * Helper function to fetch task details and show the edit popup.
+     * Used by both task list item click and Gantt chart click.
+     * @param {string|number} taskId - The ID of the task to fetch and show.
+     */
+    async function showEditTaskPopupWithDetails(taskId) {
+        editErrorMessageDiv.textContent = ''; 
+        try {
+            const response = await fetch(`/task/${taskId}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            const taskDetails = await response.json();
+            showEditTaskPopupUI(taskDetails); // Show popup with populated data
+        } catch (error) {
+            console.error('Error fetching task details for popup:', error);
+            // Display error in a general way or in the edit popup if it's already open
+            // For simplicity, alert or log for now.
+            alert(`Error fetching task details: ${error.message}`);
+        }
+    }
+
 
     /**
      * Fetches active tasks from the server and renders them.
@@ -245,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const tasks = await response.json();
             renderTasks(tasks); 
-            renderSimpleGantt(tasks);
+            renderGraphicalGantt(tasks); // Changed from renderSimpleGantt
 
             const activeTasksULElement = document.getElementById('active-tasks-ul');
             if (activeTasksULElement) {

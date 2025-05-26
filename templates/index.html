@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <!-- SortableJS via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Frappe Gantt CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
 </head>
 <body>
     <div class="main-container">
@@ -20,10 +22,8 @@
                     </ul>
                 </div>
                 <div id="gantt-chart-area">
-                    <h3>Gantt Chart (Placeholder)</h3>
-                    <ul id="simple-gantt-list">
-                        <!-- Simple Gantt items will be populated here -->
-                    </ul>
+                    <h3>Gantt Chart</h3>
+                    <div id="gantt-target"></div> <!-- Target for Frappe Gantt -->
                 </div>
             </div>
             <button id="add-new-task-btn">Add new task</button>
@@ -123,10 +123,12 @@
             <label for="delete_reason_input">Reason for delete (optional):</label>
             <textarea name="delete_reason" id="delete_reason_input"></textarea>
             <p>Are you sure you want to delete this task?</p>
-            <div id="delete-confirm-error-message" style="color: red; margin-bottom: 10px;"></div>
+            <div id="delete-confirm-error-message" class="error-message" style="color: red; margin-bottom: 10px;"></div>
             <button type="button" id="confirm-delete-btn">Yes, Delete</button>
             <button type="button" id="cancel-delete-confirm-btn">Cancel</button>
         </form>
     </div>
+    <!-- Frappe Gantt JS -->
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script></body>
 </html>
