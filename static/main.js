@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const sortByLimitBtn = document.getElementById('sort-by-limit-btn');
 
     // Gantt Chart Area
-    const ganttChartList = document.getElementById('simple-gantt-list');
+    // const ganttChartList = document.getElementById('simple-gantt-list'); // Removed as it's replaced by gantt-target
+    const ganttTarget = document.getElementById('gantt-target');
+
 
     // Delete Confirmation Popup Elements
     const deleteConfirmPopup = document.getElementById('delete-confirm-popup');
@@ -79,9 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideAddTaskPopup() {
         hidePopup(addTaskPopup);
     }
-    addTaskBtn.addEventListener('click', showAddTaskPopup);
-    cancelAddTaskBtn.addEventListener('click', hideAddTaskPopup);
-
+    
     // Edit Task Popup
     function updateEditActionButtonsState() {
         /**
@@ -116,8 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hidePopup(editTaskPopup);
         currentEditTaskDetails = null; // Clear current task details when popup is hidden
     }
-    cancelEditTaskBtn.addEventListener('click', hideEditTaskPopup);
-
+    
     // Delete Confirmation Popup
     function showDeleteConfirmPopup(taskId) {
         deleteTaskIdConfirmInput.value = taskId;
@@ -127,37 +126,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideDeleteConfirmPopup() {
         hidePopup(deleteConfirmPopup);
     }
-    cancelDeleteConfirmBtn.addEventListener('click', hideDeleteConfirmPopup);
-
-    // Overlay click handler to close any open popup
-    if (popupOverlay) {
-        popupOverlay.addEventListener('click', () => {
-            hideAddTaskPopup();
-            hideEditTaskPopup();
-            hideDeleteConfirmPopup();
-        });
-    }
     // --- End Popup Management ---
-
-    // --- Event Listeners for Buttons within Popups or Main UI ---
-
-    // Listener for "Delete" button in Edit Popup
-    deleteFromEditBtn.addEventListener('click', () => {
-        const taskId = editTaskIdInput.value;
-        if (taskId) {
-            showDeleteConfirmPopup(taskId);
-        } else {
-            console.error("Task ID not found in edit form for deletion.");
-        }
-    });
 
     // --- Task Rendering Functions ---
 
+    /**
+     * Renders the list of active tasks in the '#task-list-area'.
+     * Sets up click listeners on each task item to open the edit popup.
+     */
     function renderTasks(tasks) {
-        /**
-         * Renders the list of active tasks in the '#task-list-area'.
-         * Sets up click listeners on each task item to open the edit popup.
-         */
         let ul = document.getElementById('active-tasks-ul');
         if (!ul) { 
             ul = document.createElement('ul');
@@ -169,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ul.innerHTML = ''; 
         }
         
-        // Remove any existing "No active tasks" message before rendering new tasks
         const existingNoTasksMessage = taskListArea.querySelector('p');
         if (existingNoTasksMessage) {
             existingNoTasksMessage.remove();
@@ -178,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tasks || tasks.length === 0) {
             const noTasksMessage = document.createElement('p');
             noTasksMessage.textContent = 'No active tasks.';
-            taskListArea.appendChild(noTasksMessage); // Append directly to taskListArea
+            taskListArea.appendChild(noTasksMessage); 
             return;
         }
 
@@ -218,7 +194,125 @@ document.addEventListener('DOMContentLoaded', function() {
             ul.appendChild(li);
         });
     }
+
+    /**
+     * Renders a graphical Gantt chart using Frappe Gantt library.
+     * @param {Array<Object>} tasks - Array of task objects.
+     */
+    function renderGraphicalGantt(tasks) {
+        ganttTarget.innerHTML = ''; // Clear previous Gantt chart
+
+        const filteredTasks = tasks.filter(task => task.scheduled_start_date && task.scheduled_end_date);
+
+        if (filteredTasks.length === 0) {
+            ganttTarget.innerHTML = '<p>No tasks with scheduled dates to display in Gantt chart.</p>';
+            return;
+        }
+
+        const ganttTasks = filteredTasks.map(task => {
+            const startDate = task.scheduled_start_date.split('T')[0];
+            const endDate = task.scheduled_end_date.split('T')[0];
+            
+            let progress = 0;
+            if (task.status === 'completed' || task.actual_end_date) {
+                progress = 100;
+            } else if (task.status === 'doing' || task.actual_start_date) {
+                progress = 50; 
+            }
+
+            return {
+                id: String(task.id), 
+                name: task.name,
+                start: startDate,
+                end: endDate,
+                progress: progress,
+                dependencies: '' 
+            };
+        });
+
+        // eslint-disable-next-line no-undef
+        const gantt = new Gantt("#gantt-target", ganttTasks, {
+            header_height: 50,
+            column_width: 30, 
+            step: 24, 
+            view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+            bar_height: 20,
+            bar_corner_radius: 3,
+            arrow_curve: 5,
+            padding: 18,
+            view_mode: 'Week', 
+            date_format: 'YYYY-MM-DD',
+            custom_popup_html: null, 
+            on_click: function (task) {
+                showEditTaskPopupWithDetails(task.id);
+            },
+        });
+    }
     
+    /**
+     * Renders the list of completed tasks in '#completed-tasks-list'.
+     */
+    function renderCompletedTasks(tasks) {
+        completedTasksListArea.innerHTML = ''; 
+        if (!tasks || tasks.length === 0) {
+            completedTasksListArea.innerHTML = '<p>No completed tasks.</p>';
+            return;
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'task-list-condensed';
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = 'task-item-condensed';
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = `${task.name} (Completed: ${new Date(task.actual_end_date).toLocaleDateString()})`;
+            
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'restore-btn'; 
+            restoreBtn.dataset.taskId = task.id;
+            restoreBtn.textContent = 'Restore';
+            
+            li.appendChild(textSpan);
+            li.appendChild(restoreBtn);
+            ul.appendChild(li);
+        });
+        completedTasksListArea.appendChild(ul);
+    }
+
+    /**
+     * Renders the list of deleted tasks in '#deleted-tasks-list'.
+     */
+    function renderDeletedTasks(tasks) {
+        deletedTasksListArea.innerHTML = ''; 
+        if (!tasks || tasks.length === 0) {
+            deletedTasksListArea.innerHTML = '<p>No deleted tasks.</p>';
+            return;
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'task-list-condensed';
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = 'task-item-condensed';
+            
+            const textSpan = document.createElement('span');
+            let text = `${task.name} (Deleted: ${new Date(task.updated_at).toLocaleDateString()})`;
+            if (task.delete_reason) {
+                text += ` - Reason: ${task.delete_reason}`;
+            }
+            textSpan.textContent = text;
+
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'restore-btn'; 
+            restoreBtn.dataset.taskId = task.id;
+            restoreBtn.textContent = 'Restore';
+
+            li.appendChild(textSpan);
+            li.appendChild(restoreBtn);
+            ul.appendChild(li);
+        });
+        deletedTasksListArea.appendChild(ul);
+    }
+
     // --- API Call and Data Handling Functions ---
 
     /**
@@ -238,12 +332,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showEditTaskPopupUI(taskDetails); // Show popup with populated data
         } catch (error) {
             console.error('Error fetching task details for popup:', error);
-            // Display error in a general way or in the edit popup if it's already open
-            // For simplicity, alert or log for now.
             alert(`Error fetching task details: ${error.message}`);
         }
     }
-
 
     /**
      * Fetches active tasks from the server and renders them.
@@ -258,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const tasks = await response.json();
             renderTasks(tasks); 
-            renderGraphicalGantt(tasks); // Changed from renderSimpleGantt
+            renderGraphicalGantt(tasks);
 
             const activeTasksULElement = document.getElementById('active-tasks-ul');
             if (activeTasksULElement) {
@@ -306,10 +397,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Event Listener for "Sort by Limit" button
-    sortByLimitBtn.addEventListener('click', () => {
-        fetchAndRenderActiveTasks('limit_date');
-    });
+    /**
+     * Fetches completed tasks from the server and renders them.
+     */
+    async function fetchAndRenderCompletedTasks() {
+        try {
+            const response = await fetch('/get_completed_tasks');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            const tasks = await response.json();
+            renderCompletedTasks(tasks);
+        } catch (error) {
+            console.error('Error fetching completed tasks:', error);
+            completedTasksListArea.innerHTML = `<p style="color: red;">Error loading completed tasks: ${error.message}</p>`;
+        }
+    }
+
+    /**
+     * Fetches deleted tasks from the server and renders them.
+     */
+    async function fetchAndRenderDeletedTasks() {
+        try {
+            const response = await fetch('/get_deleted_tasks');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            const tasks = await response.json();
+            renderDeletedTasks(tasks);
+        } catch (error) {
+            console.error('Error fetching deleted tasks:', error);
+            deletedTasksListArea.innerHTML = `<p style="color: red;">Error loading deleted tasks: ${error.message}</p>`;
+        }
+    }
 
     // --- Form Submission Handlers ---
 
@@ -432,6 +554,58 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteConfirmErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
         }
     });
+    
+    // --- Event Delegation for Restore Buttons ---
+    /**
+     * Handles click events on restore buttons within completed or deleted task lists.
+     * Uses event delegation.
+     * @param {Event} event - The click event.
+     */
+    async function handleRestoreTask(event) {
+        if (event.target.classList.contains('restore-btn')) {
+            const taskId = event.target.dataset.taskId;
+            if (!taskId) return;
+
+            try {
+                const response = await fetch(`/restore_task/${taskId}`, { method: 'POST' });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw err; // Throw to be caught by catch block
+                }
+                const data = await response.json();
+                console.log(data.message); // Log success
+
+                // Refresh all relevant lists to reflect the change
+                fetchAndRenderActiveTasks();
+                fetchAndRenderCompletedTasks();
+                fetchAndRenderDeletedTasks();
+            } catch (error) {
+                console.error('Error restoring task:', error);
+                alert(`Error restoring task: ${error.error || 'An unexpected error occurred.'}`);
+            }
+        }
+    }
+    
+    // --- Event Listeners for UI interactions ---
+    addTaskBtn.addEventListener('click', showAddTaskPopup);
+    cancelAddTaskBtn.addEventListener('click', hideAddTaskPopup);
+    cancelEditTaskBtn.addEventListener('click', hideEditTaskPopup);
+    cancelDeleteConfirmBtn.addEventListener('click', hideDeleteConfirmPopup);
+    
+    // Listener for "Delete" button in Edit Popup
+    deleteFromEditBtn.addEventListener('click', () => {
+        const taskId = editTaskIdInput.value;
+        if (taskId) {
+            showDeleteConfirmPopup(taskId);
+        } else {
+            console.error("Task ID not found in edit form for deletion.");
+        }
+    });
+    
+    // Event Listener for "Sort by Limit" button
+    sortByLimitBtn.addEventListener('click', () => {
+        fetchAndRenderActiveTasks('limit_date');
+    });
 
     /**
      * Handles the "Start Task" action from the Edit Task popup.
@@ -489,163 +663,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // --- Rendering Functions for Different Task Categories ---
-
-    /**
-     * Renders a simple textual Gantt chart for tasks with scheduled dates.
-     */
-    function renderSimpleGantt(tasks) {
-        ganttChartList.innerHTML = ''; 
-        const scheduledTasks = tasks.filter(task => task.scheduled_start_date && task.scheduled_end_date);
-        if (scheduledTasks.length === 0) {
-            ganttChartList.innerHTML = '<li>No tasks with scheduled dates for Gantt view.</li>';
-            return;
-        }
-        scheduledTasks.forEach(task => {
-            const li = document.createElement('li');
-            const startDate = new Date(task.scheduled_start_date).toLocaleDateString();
-            const endDate = new Date(task.scheduled_end_date).toLocaleDateString();
-            li.textContent = `${task.name}: [${startDate}] to [${endDate}]`;
-            ganttChartList.appendChild(li);
-        });
-    }
-    
-    /**
-     * Renders the list of completed tasks in '#completed-tasks-list'.
-     */
-    function renderCompletedTasks(tasks) {
-        completedTasksListArea.innerHTML = ''; 
-        if (!tasks || tasks.length === 0) {
-            completedTasksListArea.innerHTML = '<p>No completed tasks.</p>';
-            return;
-        }
-        const ul = document.createElement('ul');
-        ul.className = 'task-list-condensed';
-        tasks.forEach(task => {
-            const li = document.createElement('li');
-            li.className = 'task-item-condensed';
-            
-            const textSpan = document.createElement('span');
-            textSpan.textContent = `${task.name} (Completed: ${new Date(task.actual_end_date).toLocaleDateString()})`;
-            
-            const restoreBtn = document.createElement('button');
-            restoreBtn.className = 'restore-btn'; // Class for styling and event delegation
-            restoreBtn.dataset.taskId = task.id;
-            restoreBtn.textContent = 'Restore';
-            
-            li.appendChild(textSpan);
-            li.appendChild(restoreBtn);
-            ul.appendChild(li);
-        });
-        completedTasksListArea.appendChild(ul);
-    }
-
-    /**
-     * Fetches completed tasks from the server and renders them.
-     */
-    async function fetchAndRenderCompletedTasks() {
-        try {
-            const response = await fetch('/get_completed_tasks');
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-            const tasks = await response.json();
-            renderCompletedTasks(tasks);
-        } catch (error) {
-            console.error('Error fetching completed tasks:', error);
-            completedTasksListArea.innerHTML = `<p style="color: red;">Error loading completed tasks: ${error.message}</p>`;
-        }
-    }
-
-    /**
-     * Renders the list of deleted tasks in '#deleted-tasks-list'.
-     */
-    function renderDeletedTasks(tasks) {
-        deletedTasksListArea.innerHTML = ''; 
-        if (!tasks || tasks.length === 0) {
-            deletedTasksListArea.innerHTML = '<p>No deleted tasks.</p>';
-            return;
-        }
-        const ul = document.createElement('ul');
-        ul.className = 'task-list-condensed';
-        tasks.forEach(task => {
-            const li = document.createElement('li');
-            li.className = 'task-item-condensed';
-            
-            const textSpan = document.createElement('span');
-            let text = `${task.name} (Deleted: ${new Date(task.updated_at).toLocaleDateString()})`;
-            if (task.delete_reason) {
-                text += ` - Reason: ${task.delete_reason}`;
-            }
-            textSpan.textContent = text;
-
-            const restoreBtn = document.createElement('button');
-            restoreBtn.className = 'restore-btn'; // Class for styling and event delegation
-            restoreBtn.dataset.taskId = task.id;
-            restoreBtn.textContent = 'Restore';
-
-            li.appendChild(textSpan);
-            li.appendChild(restoreBtn);
-            ul.appendChild(li);
-        });
-        deletedTasksListArea.appendChild(ul);
-    }
-
-    /**
-     * Fetches deleted tasks from the server and renders them.
-     */
-    async function fetchAndRenderDeletedTasks() {
-        try {
-            const response = await fetch('/get_deleted_tasks');
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-            const tasks = await response.json();
-            renderDeletedTasks(tasks);
-        } catch (error) {
-            console.error('Error fetching deleted tasks:', error);
-            deletedTasksListArea.innerHTML = `<p style="color: red;">Error loading deleted tasks: ${error.message}</p>`;
-        }
-    }
-
-    // --- Event Delegation for Restore Buttons ---
-    /**
-     * Handles click events on restore buttons within completed or deleted task lists.
-     * Uses event delegation.
-     * @param {Event} event - The click event.
-     */
-    async function handleRestoreTask(event) {
-        if (event.target.classList.contains('restore-btn')) {
-            const taskId = event.target.dataset.taskId;
-            if (!taskId) return;
-
-            try {
-                const response = await fetch(`/restore_task/${taskId}`, { method: 'POST' });
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw err; // Throw to be caught by catch block
-                }
-                const data = await response.json();
-                console.log(data.message); // Log success
-                // alert(data.message); // Optional: provide user feedback
-
-                // Refresh all relevant lists to reflect the change
-                fetchAndRenderActiveTasks();
-                fetchAndRenderCompletedTasks();
-                fetchAndRenderDeletedTasks();
-            } catch (error) {
-                console.error('Error restoring task:', error);
-                // Display error to the user, e.g., via an alert or a dedicated status message area
-                alert(`Error restoring task: ${error.error || 'An unexpected error occurred.'}`);
-            }
-        }
-    }
-
     // Attach event listeners for restore buttons using delegation
     completedTasksListArea.addEventListener('click', handleRestoreTask);
     deletedTasksListArea.addEventListener('click', handleRestoreTask);
+    
+    // Overlay click handler to close any open popup
+    if (popupOverlay) {
+        popupOverlay.addEventListener('click', () => {
+            hideAddTaskPopup();
+            hideEditTaskPopup();
+            hideDeleteConfirmPopup();
+        });
+    }
 
     // --- Initial Data Load ---
     // Fetch and render all categories of tasks when the page loads.
