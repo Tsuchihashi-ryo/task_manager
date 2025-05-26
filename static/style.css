@@ -1,125 +1,287 @@
+/* General Body Styles */
 body {
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
 }
 
 .main-container {
     padding: 20px;
+    max-width: 1200px;
+    margin: auto;
 }
 
-/* Popup Overlay */
+/* --- Typography --- */
+h1, h2, h3, h4 {
+    color: #333;
+}
+
+/* --- Buttons --- */
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 5px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+button[type="button"] { /* Specific styling for non-submit buttons if needed */
+    background-color: #6c757d;
+}
+button[type="button"]:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+
+/* --- Popup Styles --- */
 .popup-overlay {
-    display: none;
+    display: none; /* Hidden by default */
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-    z-index: 1000; /* Ensure it's on top */
+    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay for better focus */
+    z-index: 1000;
 }
 
-/* Popup Container */
 .popup {
-    display: none; /* Initially hidden */
+    display: none; /* Hidden by default */
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: #fff;
-    padding: 20px;
-    border: 1px solid #ccc;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1001; /* Ensure it's above the overlay */
-    width: 400px;
+    padding: 25px;
+    border-radius: 8px; /* Softer corners */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    width: 90%;
+    max-width: 450px; /* Max width for larger screens */
+    box-sizing: border-box;
 }
 
-#edit-task-popup { /* Already has .popup class, so display:none is inherited */
-    /* Specific styles for edit popup if needed in future */
-}
-
-#delete-confirm-popup { /* Already has .popup class, so display:none is inherited */
-    /* Specific styles for delete confirm popup if needed in future */
-}
-
-.popup h3, .popup h4 { /* Apply to h4 in delete popup as well */
+.popup h3, .popup h4 {
     margin-top: 0;
+    margin-bottom: 15px;
+    color: #0056b3;
 }
 
-.popup form label,
-.popup form input,
-.popup form textarea,
-.popup form button {
+/* Form Element Styling within Popups */
+.popup form label {
     display: block;
-    width: calc(100% - 22px); /* Account for padding/border */
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.popup form input[type="text"],
+.popup form input[type="datetime-local"],
+.popup form textarea {
+    display: block;
+    width: calc(100% - 20px); /* Full width minus padding */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.95em;
 }
 
 .popup form input[type="checkbox"] {
     display: inline-block;
     width: auto;
-    margin-right: 5px;
+    margin-right: 8px;
+    vertical-align: middle;
 }
 
-.popup form label[for*="is_not_main"] { /* Specific label for checkbox */
+.popup form label[for*="is_not_main"] {
     display: inline-block;
     width: auto;
+    font-weight: normal;
+    margin-bottom: 15px;
 }
-
 
 .popup form textarea {
     resize: vertical;
-    min-height: 60px;
+    min-height: 80px;
 }
 
-.popup form button {
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
+.popup form button { /* Buttons inside popups */
+    width: auto; /* Allow buttons to size based on content */
+    padding: 10px 20px;
+    margin-right: 10px; /* Space between buttons */
 }
 
-.popup form button[type="button"] {
-    background-color: #6c757d;
+.popup form button:last-child {
+    margin-right: 0;
 }
 
-.popup form button:hover {
-    opacity: 0.9;
-}
-
-/* Basic layout for task areas - can be expanded later */
-.top-area {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-#active-tasks-gantt-container {
-    display: flex;
-    gap: 20px;
+.popup form .error-message { /* Common class for error messages in popups */
+    color: red;
+    font-size: 0.9em;
     margin-bottom: 10px;
 }
 
+
+/* --- Main Layout Areas --- */
+.top-area {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    display: flex; /* For aligning title and buttons */
+    justify-content: space-between; /* Pushes children to ends */
+    align-items: center; /* Vertically aligns items */
+}
+
+.top-area-title { /* Optional: for a specific title element if you add one */
+    font-size: 1.5em;
+    color: #0056b3;
+}
+
+.top-area-actions button { /* Style buttons in the top area */
+    margin-left: 10px;
+}
+
+
+#active-tasks-gantt-container {
+    display: flex;
+    gap: 20px; /* Space between task list and gantt chart */
+    margin-bottom: 20px;
+}
+
 #task-list-area {
-    flex: 1;
+    flex: 1; /* Takes 1 part of the available space */
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 #gantt-chart-area {
-    flex: 2;
-    background-color: #f9f9f9;
-    padding: 10px;
-    border-radius: 4px;
+    flex: 2; /* Takes 2 parts of the available space */
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    max-height: 400px; /* Increased max height */
+    overflow-y: auto;
 }
 
 .bottom-main-container {
     display: flex;
-    gap: 20px;
+    gap: 20px; /* Space between completed and deleted task sections */
 }
 
 .bottom-section {
-    flex: 1;
+    flex: 1; /* Each section takes equal space */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    min-height: 200px; /* Ensure they have some height even if empty */
+}
+
+/* --- Task List Styling (General for all lists) --- */
+.task-list, 
+#simple-gantt-list,
+.task-list-condensed { /* Applied to completed/deleted lists in JS */
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 10px;
+}
+
+.task-list li, /* For active tasks */
+#simple-gantt-list li,
+.task-list-condensed li { /* For completed/deleted tasks */
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95em;
+    cursor: default; /* Default cursor for non-interactive lists */
+}
+
+.task-list li:last-child,
+#simple-gantt-list li:last-child,
+.task-list-condensed li:last-child {
+    border-bottom: none;
+}
+
+/* Specific to active task items for interactivity */
+#active-tasks-ul .task-item {
     background-color: #f9f9f9;
-    padding: 15px;
+    margin-bottom: 8px;
     border-radius: 4px;
+    border-left: 5px solid #007bff; /* Highlight color */
+    cursor: pointer; /* Indicate clickable */
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+#active-tasks-ul .task-item:hover {
+    background-color: #e9ecef;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#active-tasks-ul .task-item .task-name {
+    font-weight: bold;
+}
+#active-tasks-ul .task-item .task-name.minor-task {
+    font-weight: normal;
+    color: #555;
+}
+#active-tasks-ul .task-item .task-limit-date,
+#active-tasks-ul .task-item .task-scheduled-dates {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 4px;
+}
+
+
+/* SortableJS helper classes */
+.sortable-ghost {
+    opacity: 0.5;
+    background-color: #e0e0e0; /* More distinct ghosting */
+    border: 1px dashed #007bff;
+}
+
+.sortable-chosen {
+    /* No specific style needed here currently, ghost is enough */
+}
+
+.sortable-drag {
+    /* No specific style needed here currently */
+}
+
+/* Styling for Restore buttons in completed/deleted lists */
+.task-list-condensed .task-item-condensed {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-list-condensed .restore-btn {
+    background-color: #28a745; /* Green for restore */
+    color: white;
+    padding: 3px 8px; /* Smaller padding for condensed lists */
+    font-size: 0.8em;
+    border-radius: 3px;
+    margin-left: 10px; /* Space from the task text */
+    cursor: pointer;
+}
+
+.task-list-condensed .restore-btn:hover {
+    background-color: #218838;
 }

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Management App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- SortableJS via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
     <div class="main-container">
@@ -13,11 +15,15 @@
             <div id="active-tasks-gantt-container">
                 <div id="task-list-area">
                     <h2>Active Tasks</h2>
-                    <!-- Task list will be populated here -->
+                    <ul id="active-tasks-ul" class="task-list">
+                        <!-- Task list will be populated here by main.js -->
+                    </ul>
                 </div>
                 <div id="gantt-chart-area">
                     <h3>Gantt Chart (Placeholder)</h3>
-                    <!-- Gantt chart will be rendered here -->
+                    <ul id="simple-gantt-list">
+                        <!-- Simple Gantt items will be populated here -->
+                    </ul>
                 </div>
             </div>
             <button id="add-new-task-btn">Add new task</button>
