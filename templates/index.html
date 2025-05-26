@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Top Area -->
+        <div class="top-area">
+            <div id="active-tasks-gantt-container">
+                <div id="task-list-area">
+                    <h2>Active Tasks</h2>
+                    <!-- Task list will be populated here -->
+                </div>
+                <div id="gantt-chart-area">
+                    <h3>Gantt Chart (Placeholder)</h3>
+                    <!-- Gantt chart will be rendered here -->
+                </div>
+            </div>
+            <button id="add-new-task-btn">Add new task</button>
+            <button id="sort-by-limit-btn">Sort by Limit</button>
+        </div>
+
+        <!-- Bottom Area (Main Container) -->
+        <div class="bottom-main-container">
+            <!-- Bottom-Left Area -->
+            <div id="completed-tasks-container" class="bottom-section">
+                <h2>終了したタスク (Completed Tasks)</h2>
+                <div id="completed-tasks-list">
+                    <!-- Completed tasks will be listed here -->
+                </div>
+            </div>
+
+            <!-- Bottom-Right Area -->
+            <div id="deleted-tasks-container" class="bottom-section">
+                <h2>削除したタスク (Deleted Tasks)</h2>
+                <div id="deleted-tasks-list">
+                    <!-- Deleted tasks will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Popup -->
+    <div class="popup-overlay" id="popup-overlay"></div>
+    <div id="add-task-popup" class="popup">
+        <h3>Add New Task</h3>
+        <form id="add-task-form">
+            <label for="task-name">Name:</label>
+            <input type="text" id="task-name" name="name" required>
+
+            <label for="task-detail">Detail:</label>
+            <textarea id="task-detail" name="detail"></textarea>
+
+            <label for="task-limit-date">Limit Date:</label>
+            <input type="datetime-local" id="task-limit-date" name="limit_date" required>
+
+            <label for="task-scheduled-start-date">Scheduled Start Date:</label>
+            <input type="datetime-local" id="task-scheduled-start-date" name="scheduled_start_date">
+
+            <label for="task-scheduled-end-date">Scheduled End Date:</label>
+            <input type="datetime-local" id="task-scheduled-end-date" name="scheduled_end_date">
+            
+            <div>
+                <input type="checkbox" id="task-is-not-main" name="is_not_main">
+                <label for="task-is-not-main">Is this a minor task?</label>
+            </div>
+
+            <div id="add-task-error-message" style="color: red; margin-bottom: 10px;"></div>
+
+            <button type="submit">Make</button>
+            <button type="button" id="cancel-add-task-btn">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Edit Task Popup -->
+    <div id="edit-task-popup" class="popup">
+        <h3>Edit Task</h3>
+        <form id="edit-task-form">
+            <input type="hidden" name="task_id" id="edit-task-id">
+
+            <label for="edit-task-name">Name:</label>
+            <input type="text" id="edit-task-name" name="name" required>
+
+            <label for="edit-task-detail">Detail:</label>
+            <textarea id="edit-task-detail" name="detail"></textarea>
+
+            <label for="edit-task-limit-date">Limit Date:</label>
+            <input type="datetime-local" id="edit-task-limit-date" name="limit_date" required>
+
+            <label for="edit-task-scheduled-start-date">Scheduled Start Date:</label>
+            <input type="datetime-local" id="edit-task-scheduled-start-date" name="scheduled_start_date">
+
+            <label for="edit-task-scheduled-end-date">Scheduled End Date:</label>
+            <input type="datetime-local" id="edit-task-scheduled-end-date" name="scheduled_end_date">
+            
+            <div id="edit-task-error-message" style="color: red; margin-bottom: 10px;"></div>
+
+            <button type="submit">Save</button>
+            <button type="button" id="cancel-edit-task-btn">Cancel</button>
+            <hr>
+            <p>Other Actions:</p>
+            <button type="button" id="start-task-btn">Start</button>
+            <button type="button" id="end-task-btn">End</button>
+            <button type="button" id="delete-task-btn">Delete</button> 
+        </form>
+    </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div id="delete-confirm-popup" class="popup">
+        <h4>Delete Task Confirmation</h4>
+        <form id="delete-confirm-form">
+            <input type="hidden" id="delete-task-id-confirm">
+            <label for="delete_reason_input">Reason for delete (optional):</label>
+            <textarea name="delete_reason" id="delete_reason_input"></textarea>
+            <p>Are you sure you want to delete this task?</p>
+            <div id="delete-confirm-error-message" style="color: red; margin-bottom: 10px;"></div>
+            <button type="button" id="confirm-delete-btn">Yes, Delete</button>
+            <button type="button" id="cancel-delete-confirm-btn">Cancel</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='main.js') }}"></script></body>
+</html>
