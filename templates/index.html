@@ -19,25 +19,22 @@
         </div>
     </header>
     <div class="main-container">
-        <!-- Top Area: Now primarily for task list and Gantt chart -->
-        <div class="top-area"> 
-            <div id="active-tasks-gantt-container">
-                <div id="task-list-area">
-                    <h2>Active Tasks</h2>
-                    <ul id="active-tasks-ul" class="task-list">
-                        <!-- Task list will be populated here by main.js -->
-                    </ul>
-                </div>
-                <div id="gantt-chart-area">
-                    <h3>Gantt Chart</h3>
-                    <div id="gantt-target"></div> <!-- Target for Frappe Gantt -->
-                </div>
+        <!-- Upper Area: Contains task list and Gantt chart -->
+        <div id="upper-area"> 
+            <div id="task-list-area">
+                <h2>Active Tasks</h2>
+                <ul id="active-tasks-ul" class="task-list">
+                    <!-- Task list will be populated here by main.js -->
+                </ul>
             </div>
-            <!-- Buttons moved to #app-header -->
+            <div id="gantt-chart-area">
+                <h3>Gantt Chart</h3>
+                <div id="gantt-target"></div> <!-- Target for Frappe Gantt -->
+            </div>
         </div>
 
-        <!-- Bottom Area (Main Container) -->
-        <div class="bottom-main-container">
+        <!-- Lower Area (Main Container) -->
+        <div id="lower-area">
             <!-- Bottom-Left Area -->
             <div id="completed-tasks-container" class="bottom-section">
                 <h2>終了したタスク (Completed Tasks)</h2>
@@ -68,13 +65,13 @@
             <textarea id="task-detail" name="detail"></textarea>
 
             <label for="task-limit-date">Limit Date:</label>
-            <input type="datetime-local" id="task-limit-date" name="limit_date" required>
+            <input type="date" id="task-limit-date" name="limit_date" required> <!-- Changed to type="date" -->
 
             <label for="task-scheduled-start-date">Scheduled Start Date:</label>
-            <input type="datetime-local" id="task-scheduled-start-date" name="scheduled_start_date">
+            <input type="date" id="task-scheduled-start-date" name="scheduled_start_date"> <!-- Changed to type="date" -->
 
             <label for="task-scheduled-end-date">Scheduled End Date:</label>
-            <input type="datetime-local" id="task-scheduled-end-date" name="scheduled_end_date">
+            <input type="date" id="task-scheduled-end-date" name="scheduled_end_date"> <!-- Changed to type="date" -->
             
             <div>
                 <input type="checkbox" id="task-is-not-main" name="is_not_main">
@@ -101,13 +98,13 @@
             <textarea id="edit-task-detail" name="detail"></textarea>
 
             <label for="edit-task-limit-date">Limit Date:</label>
-            <input type="datetime-local" id="edit-task-limit-date" name="limit_date" required>
+            <input type="date" id="edit-task-limit-date" name="limit_date" required> <!-- Changed to type="date" -->
 
             <label for="edit-task-scheduled-start-date">Scheduled Start Date:</label>
-            <input type="datetime-local" id="edit-task-scheduled-start-date" name="scheduled_start_date">
+            <input type="date" id="edit-task-scheduled-start-date" name="scheduled_start_date"> <!-- Changed to type="date" -->
 
             <label for="edit-task-scheduled-end-date">Scheduled End Date:</label>
-            <input type="datetime-local" id="edit-task-scheduled-end-date" name="scheduled_end_date">
+            <input type="date" id="edit-task-scheduled-end-date" name="scheduled_end_date"> <!-- Changed to type="date" -->
             
             <div id="edit-task-error-message" style="color: red; margin-bottom: 10px;"></div>
 

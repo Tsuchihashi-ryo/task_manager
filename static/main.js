@@ -38,21 +38,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Global State Variables ---
     let currentEditTaskDetails = null; // Stores the full details of the task being edited
-    let sortableInstance = null;      // To keep track of the SortableJS instance for active tasks
-    let currentGanttInstance = null;  // To store the Frappe Gantt instance
+    let sortableInstance = null; 
+    let currentGanttInstance = null; 
     const ganttViewModes = ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month']; // Order for zooming
 
     // --- Helper Functions ---
 
     /**
-     * Formats an ISO datetime string (or null) to a string suitable for datetime-local input.
-     * Example: "2023-10-04T10:30:00" -> "2023-10-04T10:30"
+     * Formats an ISO datetime string (or null) to a string suitable for date input (YYYY-MM-DD).
      * @param {string|null} isoString - The ISO datetime string from the backend.
      * @returns {string} Formatted string or empty string if input is null/empty.
      */
     function formatDateTimeForInput(isoString) {
         if (!isoString) return "";
-        return isoString.substring(0, 16);
+        // Original: isoString.substring(0, 16) for datetime-local (YYYY-MM-DDTHH:MM)
+        // Changed to 0, 10 for date (YYYY-MM-DD)
+        return isoString.substring(0, 10); // Changed from 16 to 10
     }
 
     // --- Popup Management ---
@@ -154,7 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const limitDateDiv = document.createElement('div');
             limitDateDiv.className = 'task-limit-date';
-            limitDateDiv.textContent = `Limit: ${task.limit_date ? new Date(task.limit_date).toLocaleString() : 'N/A'}`;
+            // If using type="date", .toLocaleDateString() is more appropriate here
+            limitDateDiv.textContent = `Limit: ${task.limit_date ? new Date(task.limit_date).toLocaleDateString() : 'N/A'}`; 
             
             const scheduledDatesDiv = document.createElement('div');
             scheduledDatesDiv.className = 'task-scheduled-dates';
@@ -188,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const ganttTasks = filteredTasks.map(task => {
+            // Ensure dates are only YYYY-MM-DD for Frappe Gantt
             const startDate = task.scheduled_start_date.split('T')[0];
             const endDate = task.scheduled_end_date.split('T')[0];
             
@@ -384,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else {
                                 console.log('Task order updated successfully.');
                                 if (sortBy !== 'display_order') {
-                                     fetchAndRenderActiveTasks('display_order');
+                                    fetchAndRenderActiveTasks('display_order');
                                 }
                             }
                         } catch (error) {
@@ -442,17 +445,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const limit_date = document.getElementById('task-limit-date').value;
         let scheduled_start_date = document.getElementById('task-scheduled-start-date').value;
         let scheduled_end_date = document.getElementById('task-scheduled-end-date').value;
-        const is_not_main = document.getElementById('task-is-not-main').checked;
 
+        // Backend expects either both or none for scheduled dates, check here too
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) {
             addErrorMessageDiv.textContent = 'Both scheduled start and end dates must be provided if one is present.';
             return;
         }
 
+        const is_not_main = document.getElementById('task-is-not-main').checked;
+
         const taskData = {
             name, detail, limit_date, is_not_main,
-            scheduled_start_date: scheduled_start_date || "", 
-            scheduled_end_date: scheduled_end_date || ""   
+            scheduled_start_date: scheduled_start_date || null, // Send null if empty string - backend expects None for optional
+            scheduled_end_date: scheduled_end_date || null // Send null if empty string
         };
 
         try {
@@ -486,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let scheduled_start_date = document.getElementById('edit-task-scheduled-start-date').value;
         let scheduled_end_date = document.getElementById('edit-task-scheduled-end-date').value;
 
+        // Backend expects either both or none for scheduled dates, check here too
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) {
             editErrorMessageDiv.textContent = 'Both scheduled start and end dates must be provided if one is present.';
             return;
@@ -493,8 +499,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const taskData = {
             name, detail, limit_date,
-            scheduled_start_date: scheduled_start_date || "",
-            scheduled_end_date: scheduled_end_date || ""
+            scheduled_start_date: scheduled_start_date || null, // Send null if empty string
+            scheduled_end_date: scheduled_end_date || null      // Send null if empty string
         };
 
         try {
@@ -575,7 +581,10 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteFromEditBtn.addEventListener('click', () => {
         const taskId = editTaskIdInput.value;
         if (taskId) {
-            showDeleteConfirmPopup(taskId);
+            let userConfirmed = confirm("Are you sure you want to delete this task?"); // Basic confirmation. Replaced with popup later.
+            if(userConfirmed) {
+                showDeleteConfirmPopup(taskId);
+            }
         } else {
             console.error("Task ID not found in edit form for deletion.");
         }

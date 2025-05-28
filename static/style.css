@@ -39,10 +39,11 @@ body {
 }
 
 
+/* MAIN CONTAINER - NOW 100% WIDTH */
 .main-container {
     padding: 20px;
-    max-width: 1200px;
-    margin: auto;
+    width: 100%; /* Changed to 100% as per request */
+    /* max-width and margin: auto removed as per request */
     /* margin-top: 70px; /* Add margin if header is fixed to prevent overlap */
 }
 
@@ -172,25 +173,20 @@ button[type="button"]:hover:not(:disabled) {
 
 
 /* --- Main Layout Areas --- */
-.top-area {
-    /* This area no longer directly holds buttons, so flex properties for button alignment can be removed if they were here */
-    /* It now primarily serves as a container for active-tasks-gantt-container */
-    margin-bottom: 30px; 
-    /* padding-bottom: 20px; /* Original padding, might not be needed or can be adjusted */
-    /* border-bottom: 2px solid #007bff; /* Original border, can be kept or removed */
-}
-
-/* .top-area-title and .top-area-actions are no longer relevant here as buttons moved to #app-header */
-
-
-#active-tasks-gantt-container {
+/* UPPER AREA - Now wraps task list and Gantt chart, 90% width, centered */
+#upper-area {
     display: flex;
+    flex-direction: row; /* 明示的にrowを指定 */
     gap: 20px; /* Space between task list and gantt chart */
-    margin-bottom: 20px;
+    margin-bottom: 30px; /* Space below this section */
+    width: 90%; /* 90% width as requested */
+    margin-left: auto; /* Center horizontally */
+    margin-right: auto; /* Center horizontally */
 }
 
 #task-list-area {
-    flex: 1; /* Takes 1 part of the available space */
+    flex: 2 1 0%; /* flex-grow: 2, flex-shrink: 1, flex-basis: 0% */
+    min-width: 0; /* 必要であれば縮小可能にする */
     background-color: #fff;
     padding: 15px;
     border-radius: 6px;
@@ -198,30 +194,38 @@ button[type="button"]:hover:not(:disabled) {
 }
 
 #gantt-chart-area {
-    flex: 2; /* Takes 2 parts of the available space */
+    flex: 3 1 0%; /* flex-grow: 3, flex-shrink: 1, flex-basis: 0% */
+    min-width: 0; /* 必要であれば縮小可能にする */
     background-color: #fff;
     padding: 15px;
     border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    /* min-height is better for gantt to avoid collapsing when empty */
     min-height: 200px; 
-    /* max-height: 400px; /* This can be removed if gantt-target has a fixed height */
-    /* overflow-y: auto; /* Frappe Gantt has its own internal scroll for vertical if tasks exceed height */
-    display: flex; /* To help manage children like title and gantt-target */
-    flex-direction: column; /* Stack h3 and gantt-target */
-    width: 100%; /* Ensure gantt-chart-area takes full available width from its flex parent */
+    display: flex; 
+    flex-direction: column; 
 }
 
 #gantt-target {
-    width: 100%; /* Take full width of its parent container (#gantt-chart-area) */
-    height: 350px; /* Fixed height for the Gantt chart viewport */
-    overflow-x: auto; /* Enable horizontal scrollbar if Frappe Gantt's SVG content overflows */
-    /* background-color: #f0f0f0; /* Optional: for visual debugging */
+    width: 100%; 
+    height: 350px; 
+    overflow-x: auto; 
 }
 
-.bottom-main-container {
+/* ★★★ ここから追加・変更 ★★★ */
+/* Frappe Ganttによって#gantt-target内に生成されるSVG要素の高さ調整 */
+#gantt-target svg {
+    height: 100%; /* 親である#gantt-targetの高さ全体を埋めるようにする */
+}
+/* ★★★ ここまで追加・変更 ★★★ */
+
+/* LOWER AREA - Now wraps completed and deleted tasks, 90% width, centered */
+#lower-area {
     display: flex;
     gap: 20px; /* Space between completed and deleted task sections */
+    width: 90%; /* 90% width as requested */
+    margin-left: auto; /* Center horizontally */
+    margin-right: auto; /* Center horizontally */
+    margin-bottom: 20px; /* Add some space below */
 }
 
 .bottom-section {
