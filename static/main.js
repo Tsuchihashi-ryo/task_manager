@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentEditTaskDetails = null; // Stores the full details of the task being edited
     let sortableInstance = null; 
     let currentGanttInstance = null; 
-    const ganttViewModes = ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month']; // Order for zooming
+    const ganttViewModes = ['Quarter Day', '	Half Day', 'Day', 'Week', 'Month']; // Order for zooming
 
     // --- Helper Functions ---
 
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tasks.forEach(task => { 
             const li = document.createElement('li');
-            li.className = 'task-item flex items-center h-8 px-4 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-2'; // border-l-4 を削除済み
+            li.className = 'task-item flex items-center h-8 px-4 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-2';
             li.dataset.taskId = task.id; 
             li.id = `task-item-${task.id}`;
 
@@ -270,34 +270,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 limitDate.setHours(0, 0, 0, 0); // 期限日の時刻をリセット
             }
 
-            // スタイルの優先順位: 赤 > オレンジ > 緑枠線
-            // 1. Limit day を過ぎている場合 (赤色を優先)
-            if (limitDate && today.getTime() > limitDate.getTime()) {
-                li.classList.add('task-status-overdue'); // 赤色
-            } 
-            // 2. Limit day が1週間以内の場合 (オレンジ色を次点優先)
-            else if (limitDate) {
-                const oneWeekBeforeLimit = new Date(limitDate);
-                oneWeekBeforeLimit.setDate(limitDate.getDate() - 7);
-                oneWeekBeforeLimit.setHours(0, 0, 0, 0);
-                
-                if (today.getTime() >= oneWeekBeforeLimit.getTime()) { // 今日が1週間前から期限日の間
-                    li.classList.add('task-status-pending'); // オレンジ色
+            // is_not_main フラグが真の場合の特殊な色分けロジックを適用
+            if (task.is_not_main) {
+                // 優先順位: 期限切れ (赤) > 期限間近 (紫) > 通常 (青)
+                if (limitDate && today.getTime() > limitDate.getTime()) {
+                    li.classList.add('task-is-not-main-overdue'); // 赤
+                } else if (limitDate) {
+                    const oneWeekBeforeLimit = new Date(limitDate);
+                    oneWeekBeforeLimit.setDate(limitDate.getDate() - 7);
+                    oneWeekBeforeLimit.setHours(0, 0, 0, 0);
+                    if (today.getTime() >= oneWeekBeforeLimit.getTime()) {
+                        li.classList.add('task-is-not-main-pending'); // 紫
+                    } else {
+                        li.classList.add('task-is-not-main-default'); // 青
+                    }
+                } else {
+                    li.classList.add('task-is-not-main-default'); // limit_dateがない場合も青
                 }
+            } else {
+                // is_not_main フラグが偽の場合の既存の色分けロジック
+                // スタイルの優先順位: 赤 > オレンジ
+                // 1. Limit day を過ぎている場合 (赤色を優先)
+                if (limitDate && today.getTime() > limitDate.getTime()) {
+                    li.classList.add('task-status-overdue'); // 赤色
+                } 
+                // 2. Limit day が1週間以内の場合 (オレンジ色を次点優先)
+                else if (limitDate) {
+                    const oneWeekBeforeLimit = new Date(limitDate);
+                    oneWeekBeforeLimit.setDate(limitDate.getDate() - 7);
+                    oneWeekBeforeLimit.setHours(0, 0, 0, 0);
+                    
+                    if (today.getTime() >= oneWeekBeforeLimit.getTime()) { // 今日が1週間前から期限日の間
+                        li.classList.add('task-status-pending'); // オレンジ色
+                    }
+                }
+                // (通常時のデフォルトは Tailwind の bg-gray-50 なので、明示的なクラス追加は不要)
             }
             
-            // 3. Start中 (doing) のタスク (緑色の太枠線)
-            // これは背景色とは独立して適用されるように、別のクラスを使用しCSSで太枠線のみを指定
+            // Start中 (doing) のタスク (緑色の太枠線) - is_not_main の色付けと独立して適用
             if (task.status === 'doing') {
                 li.classList.add('task-status-doing-border'); // 緑色の枠線用クラス
             }
-            // ここまで修正
 
             const nameDiv = document.createElement('div');
             nameDiv.className = 'task-name font-bold flex-grow truncate'; 
             nameDiv.textContent = task.name;
             if (task.is_not_main) {
-                nameDiv.classList.add('font-normal', 'text-gray-600'); 
+                nameDiv.classList.add('text-gray-600'); 
             }
 
             const limitDateDiv = document.createElement('div');
@@ -635,7 +654,7 @@ document.addEventListener('DOMContentLoaded', function() {
             restoreBtn.className = 'restore-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs rounded-md ml-2 transition-colors duration-200'; 
             restoreBtn.dataset.taskId = task.id;
             restoreBtn.textContent = 'Restore';
-
+            
             li.appendChild(textSpan);
             li.appendChild(restoreBtn);
             ul.appendChild(li);
@@ -758,7 +777,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCompletedTasks(tasks);
         } catch (error) {
             console.error('Error fetching completed tasks:', error);
-            completedTasksListArea.innerHTML = `<p class="text-red-600">Error loading completed tasks: ${error.message}</pмещение`; 
+            completedTasksListArea.innerHTML = `<p class="text-red-600">Error loading completed tasks: ${error.message}</p>付け`; 
         }
     }
 
@@ -788,10 +807,24 @@ document.addEventListener('DOMContentLoaded', function() {
         let scheduled_start_date = document.getElementById('task-scheduled-start-date').value;
         let scheduled_end_date = document.getElementById('task-scheduled-end-date').value;
 
+        // 既存のバリデーションメッセージを修正
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) { 
-            addErrorMessageDiv.textContent = 'の両方の日時が提供されなければなりません。';
+            addErrorMessageDiv.textContent = '予定開始日と予定終了日の両方が提供されなければなりません。'; // 修正
             return;
         }
+
+        // --- NEW: Scheduled Date Validation (開始日 < 終了日) ---
+        if (scheduled_start_date && scheduled_end_date) {
+            const startDateObj = new Date(scheduled_start_date);
+            const endDateObj = new Date(scheduled_end_date);
+
+            if (startDateObj > endDateObj) {
+                alert('予定開始日が予定終了日よりも後の日付になっています。開始日を終了日と同じかそれ以前に設定してください。');
+                addErrorMessageDiv.textContent = '予定開始日が予定終了日より後の日付です。'; // エラーメッセージ表示
+                return; // フォーム送信をブロック
+            }
+        }
+        // --- NEW 終わり ---
 
         const is_not_main = taskIsNotMainCheckbox.checked; 
 
@@ -832,11 +865,25 @@ document.addEventListener('DOMContentLoaded', function() {
         let scheduled_start_date = document.getElementById('edit-task-scheduled-start-date').value;
         let scheduled_end_date = document.getElementById('edit-task-scheduled-end-date').value;
 
+        // 既存のバリデーションメッセージを修正
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) {
-            editErrorMessageDiv.textContent = '両方のスケジュール開始日と終了日が提供されなければなりません。';
+            editErrorMessageDiv.textContent = '予定開始日と予定終了日の両方が提供されなければなりません。'; // 修正
             return;
         }
         
+        // --- NEW: Scheduled Date Validation (開始日 < 終了日) ---
+        if (scheduled_start_date && scheduled_end_date) {
+            const startDateObj = new Date(scheduled_start_date);
+            const endDateObj = new Date(scheduled_end_date);
+
+            if (startDateObj > endDateObj) {
+                alert('予定開始日が予定終了日よりも後の日付になっています。開始日を終了日と同じかそれ以前に設定してください。');
+                editErrorMessageDiv.textContent = '予定開始日が予定終了日より後の日付です。'; // エラーメッセージ表示
+                return; // フォーム送信をブロック
+            }
+        }
+        // --- NEW 終わり ---
+
         const is_not_main = editTaskIsNotMainCheckbox.checked;
 
         const taskData = {
