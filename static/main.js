@@ -1,4 +1,3 @@
-
 // Wait for the DOM to be fully loaded before running scripts
 document.addEventListener('DOMContentLoaded', function() {
     // --- Global DOM Element References ---
@@ -56,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Formats an ISO datetime string (or null) to a string suitable for date input (YYYY-MM-DD).
      * @param {string|null} isoString - The ISO datetime string from the backend.
-     * @returns {string} Formatted string or empty string if input is null/empty.
+     * @returns  Formatted string or empty string if input is null/empty.
      */
     function formatDateTimeForInput(isoString) {
         if (!isoString) return "";
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Formats an ISO datetime string (or null) to a human-readable format (YYYY/MM/DD HH:MM).
      * @param {string|null} isoString - The ISO datetime string from the backend.
-     * @returns {string} Formatted string or 'N/A' if input is null/empty.
+     * @returns  Formatted string or 'N/A' if input is null/empty.
      */
     function formatDateTimeForDisplay(isoString) {
         if (!isoString) return "N/A";
@@ -234,14 +233,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Task Rendering Functions ---
     function renderTasks(tasks) {
         let ul = document.getElementById('active-tasks-ul');
-        if (!ul) { 
+        if (!ul) {
             ul = document.createElement('ul');
             ul.id = 'active-tasks-ul';
-            ul.className = 'task-list'; 
-            taskListArea.innerHTML = ''; 
+            ul.className = 'task-list';
+            taskListArea.innerHTML = '';
             taskListArea.appendChild(ul);
         } else {
-            ul.innerHTML = ''; 
+            ul.innerHTML = '';
         }
         
         const existingNoTasksMessage = taskListArea.querySelector('p');
@@ -252,21 +251,47 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tasks || tasks.length === 0) {
             const noTasksMessage = document.createElement('p');
             noTasksMessage.textContent = 'No active tasks.';
-            noTasksMessage.className = 'text-gray-500 italic'; 
-            taskListArea.appendChild(noTasksMessage); 
+            noTasksMessage.className = 'text-gray-500 italic';
+            taskListArea.appendChild(noTasksMessage);
             return;
         }
 
         tasks.forEach(task => { 
             const li = document.createElement('li');
-            li.className = 'task-item flex items-center h-8 px-4 rounded-md border-l-4 border-blue-500 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-1';
+            li.className = 'task-item flex items-center h-8 px-4 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-1'; // border-l-4 を削除済み
             li.dataset.taskId = task.id; 
             li.id = `task-item-${task.id}`;
 
-            // NEW: Add class for "doing" status
-            if (task.status === 'doing') {
-                li.classList.add('task-status-doing');
+            // --- 新しい日付比較とステータスに基づくスタイリングロジック ---
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // 今日の日付の時刻をリセット
+            const limitDate = task.limit_date ? new Date(task.limit_date) : null;
+            if (limitDate) {
+                limitDate.setHours(0, 0, 0, 0); // 期限日の時刻をリセット
             }
+
+            // スタイルの優先順位: 赤 > オレンジ > 緑枠線
+            // 1. Limit day を過ぎている場合 (赤色を優先)
+            if (limitDate && today.getTime() > limitDate.getTime()) {
+                li.classList.add('task-status-overdue'); // 赤色
+            } 
+            // 2. Limit day が1週間以内の場合 (オレンジ色を次点優先)
+            else if (limitDate) {
+                const oneWeekBeforeLimit = new Date(limitDate);
+                oneWeekBeforeLimit.setDate(limitDate.getDate() - 7);
+                oneWeekBeforeLimit.setHours(0, 0, 0, 0);
+
+                if (today.getTime() >= oneWeekBeforeLimit.getTime()) { // 今日が1週間前から期限日の間
+                    li.classList.add('task-status-pending'); // オレンジ色
+                }
+            }
+            
+            // 3. Start中 (doing) のタスク (緑色の太枠線)
+            // これは背景色とは独立して適用されるように、別のクラスを使用しCSSで太枠線のみを指定
+            if (task.status === 'doing') {
+                li.classList.add('task-status-doing-border'); // 緑色の枠線用クラス
+            }
+            // ここまで修正
 
             const nameDiv = document.createElement('div');
             nameDiv.className = 'task-name font-bold flex-grow truncate'; 
@@ -318,71 +343,76 @@ document.addEventListener('DOMContentLoaded', function() {
         const formatDateForGantt = (date) => date.toISOString().split('T')[0];
 
         const ganttTasks = tasks.map(task => { 
-            const startDate = task.scheduled_start_date.split('T')[0];
-            const endDate = task.scheduled_end_date.split('T')[0];
+            const startDate = task.scheduled_start_date ? task.scheduled_start_date.split('T')[0] : null; 
+            const endDate = task.scheduled_end_date ? task.scheduled_end_date.split('T')[0] : null; 
             
             let progress = 0;
             let customClass = ''; 
-
+            
             if (task.status === 'completed' || task.actual_end_date) {
                 progress = 100;
             } else if (task.status === 'doing' || task.actual_start_date) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                const now = new Date();
-                const totalDuration = end.getTime() - start.getTime();
-                const elapsedDuration = now.getTime() - start.getTime();
-                if (totalDuration > 0) {
-                    progress = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
-                } else {
-                    progress = 0; 
+                if (startDate && endDate) {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    const now = new Date();
+                    const totalDuration = end.getTime() - start.getTime();
+                    const elapsedDuration = now.getTime() - start.getTime();
+                    if (totalDuration > 0) {
+                        progress = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
+                    } else {
+                        progress = 0; 
+                    }
                 }
             }
 
+            // customClass ロジック（前回修正済み）
+            if (task.status === 'doing') {
+                customClass = 'gantt-task-doing';
+            } 
             if (task.is_not_main) {
                 customClass = (customClass ? customClass + ' ' : '') + 'gantt-task-not-main';
+            }
+
+            if (!startDate || !endDate) {
+                return null;
             }
 
             return {
                 id: String(task.id), 
                 name: task.name,
-                start: startDate,
-                end: endDate,
+                start: startDate, 
+                end: endDate,     
                 progress: progress,
                 dependencies: '', 
                 custom_class: customClass 
             };
-        });
+        }).filter(t => t !== null); 
 
         // Add dummy tasks to force the date range from today-2 to today+3months
-        ganttTasks.unshift({ // Add to beginning to affect sort order if not explicitly sorted below
+        ganttTasks.unshift({ 
             id: 'dummy-start-date-forcer',
-            name: '', // Empty name for invisible task
+            name: '', 
             start: formatDateForGantt(twoDaysAgo),
-            end: formatDateForGantt(twoDaysAgo), // A single day task
+            end: formatDateForGantt(twoDaysAgo), 
             progress: 0,
-            custom_class: 'gantt-dummy-task' // Apply custom class to hide
+            custom_class: 'gantt-dummy-task' 
         });
 
         ganttTasks.push({
             id: 'dummy-end-date-forcer',
-            name: '', // Empty name for invisible task
+            name: '', 
             start: formatDateForGantt(threeMonthsLater),
-            end: formatDateForGantt(threeMonthsLater), // A single day task
+            end: formatDateForGantt(threeMonthsLater), 
             progress: 0,
-            custom_class: 'gantt-dummy-task' // Apply custom class to hide
+            custom_class: 'gantt-dummy-task' 
         });
 
-        // Sort ganttTasks by start date to ensure Frappe Gantt correctly calculates the overall min/max dates
-        // This is important because Frappe Gantt relies on the input array order to determine chart range sometimes.
-        ganttTasks.sort((a, b) => new Date(a.start) - new Date(b.start));
+        // 削除: Ganttタスクの強制ソートを削除済み
+        // ganttTasks.sort((a, b) => new Date(a.start) - new Date(b.start)); 
 
-
-        // Check if there are any actual tasks with scheduled dates FOR THE MESSAGE ONLY
-        // The Gantt instance will still be created with dummy tasks to enforce the date range.
         const actualVisibleTasks = tasks.filter(t => t.scheduled_start_date && t.scheduled_end_date);
         if (actualVisibleTasks.length === 0 && ganttTasks.filter(t => !t.id.startsWith('dummy-')).length === 0 ) {
-            // Only show message if there are NO real tasks AND NO dummy tasks other than the range forcers
             const noGanttMessage = document.createElement('p');
             noGanttMessage.textContent = 'No tasks with scheduled dates to display in Gantt chart.';
             noGanttMessage.className = 'text-gray-500 italic text-center py-8'; 
@@ -399,22 +429,19 @@ document.addEventListener('DOMContentLoaded', function() {
             bar_corner_radius: 3,
             arrow_curve: 5,
             padding: 18,
-            view_mode: 'Week', 
+            view_mode: 'Day', 
             date_format: 'YYYY-MM-DD',
             custom_popup_html: null, 
             on_click: function (task) {
-                // Ensure clicks on dummy tasks don't open the edit popup
                 if (!task.id.startsWith('dummy-')) {
                     showEditTaskPopupWithDetails(task.id);
                 }
             },
         });
 
-        // Add today's line AFTER gantt has been rendered
         console.log("Calling addTodayLineToGanttChart from renderGraphicalGantt.");
         addTodayLineToGanttChart(); 
 
-        // Add wheel event listener for zoom functionality if not already added
         if (ganttTarget && !ganttTarget.dataset.wheelListenerAdded) {
             ganttTarget.addEventListener('wheel', function(event) {
                 if (event.ctrlKey && currentGanttInstance) {
@@ -424,10 +451,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     let currentIndex = ganttViewModes.indexOf(currentViewMode);
     
                     if (currentIndex === -1) { 
-                        // Fallback to 'Week' if current view mode is not found
                         console.warn("Current Gantt view mode not in predefined list. Falling back to Week.");
                         currentIndex = ganttViewModes.indexOf('Week'); 
-                        if(currentIndex === -1) currentIndex = 2; // Default to 'Day' if 'Week' not found (shouldn't happen)
+                        if(currentIndex === -1) currentIndex = 2; 
                     }
     
                     if (event.deltaY < 0) { 
@@ -454,18 +480,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // NEW: Refactored addTodayLineToGanttChart (removed retry logic, improved x-coord calculation)
     function addTodayLineToGanttChart() {
         console.log("addTodayLineToGanttChart called.");
 
         const svg = ganttTarget.querySelector('svg');
-        // SVG要素とGanttインスタンスが準備できていなければ、線は描画しない（Ganttの描画後に呼ばれるため、この時点で準備されているはず）
         if (!svg || !currentGanttInstance) {
             console.warn("SVG element or currentGanttInstance not ready for today line. Skipping.");
             return;
         }
 
-        // 古い線を削除して重複を防ぐ
         const oldTodayLine = svg.querySelector('.today-line');
         if (oldTodayLine) {
             oldTodayLine.remove();
@@ -473,26 +496,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // 日付のみを比較するため時刻をリセット
+        today.setHours(0, 0, 0, 0); 
 
         let foundTodayX = -1;
-        // const columnWidth = currentGanttInstance.options.column_width; // この変数は後で必要
 
-        // 1. まずはFrappe Ganttが描画する「今日のハイライト」矩形を探す (Day, Half Day, Quarter Day ビュー用)
         const todayHighlightRect = svg.querySelector('.grid .today-highlight');
         if (todayHighlightRect) {
-            // 見つかった場合、その矩形の中央にX座標を設定
             foundTodayX = parseFloat(todayHighlightRect.getAttribute('x')) + (parseFloat(todayHighlightRect.getAttribute('width')) / 2);
             console.log("Found today highlight rect. X:", foundTodayX);
         } else {
-            // 2. 「今日のハイライト」矩形が無い場合（Week, Month ビューなど）は、内部 dates プロパティから計算
-            // currentGanttInstance.dates は Frappe Gantt 0.6.1 の内部プロパティで、各日付の X 座標を持つ
             if (currentGanttInstance.dates && currentGanttInstance.dates.length > 0) {
-                console.log("Inspecting currentGanttInstance.dates:", currentGanttInstance.dates); // ★★★ この行を追加 ★★★
-                // 最初の要素がオブジェクトでdateとxプロパティを持つかを検証
-                // これは、x座標が取れない問題のデバッグ用の追加
+                console.log("Inspecting currentGanttInstance.dates:", currentGanttInstance.dates); 
                 if (currentGanttInstance.dates[0] && typeof currentGanttInstance.dates[0].date !== 'undefined' && typeof currentGanttInstance.dates[0].x !== 'undefined') {
-                    console.log("First element test:", currentGanttInstance.dates[0].date, currentGanttInstance.dates[0].x); // ★★★ この行を追加 ★★★
+                    console.log("First element test:", currentGanttInstance.dates[0].date, currentGanttInstance.dates[0].x); 
                 } else {
                      console.warn("currentGanttInstance.dates elements might not have 'date' or 'x' properties as expected.");
                 }
@@ -500,97 +516,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 let closestDateCol = null;
                 let minDiff = Infinity;
-
-                // Frappe Ganttのdatesリストを走査し、今日の日付と一致または最も近い日付を探す
+                
                 for (const dateCol of currentGanttInstance.dates) {
-                    // dateCol.date はDateオブジェクトだが、xプロパティはdateColオブジェクト自体にある
-                    // dateCol.date をnew Date()しても意味がないので直接渡す
                     const dateObj = new Date(dateCol.date); 
                     dateObj.setHours(0,0,0,0);
                     const diff = Math.abs(dateObj.getTime() - today.getTime());
 
-                    // 完全に一致するか、より近い日付を見つける
-                    // ここで、dateCol.date がその期間の「開始日」なので、
-                    // 今日がその期間内にあるかを考慮する必要がある。
-                    // Frappe Ganttのcolumn_widthとview_modeに基づいて期間を推測する。
-                    const columnWidth = currentGanttInstance.options.column_width; // ここでcolumWidthを取得
-                    const currentViewMode = currentGanttInstance.options.view_mode;
-                    let periodInMs = 0; // 各期間の長さ（ミリ秒）
-
-                    if (currentViewMode === 'Week' || currentViewMode === 'Month') {
-                        // Weekビューの場合、各dateColは週の初めを表す。
-                        // Monthビューの場合、各dateColは月の初めを表す。
-                        // columnWidthはピクセル単位なので、時間への変換は正確ではないが、大まかな期間を示す。
-                        // Frappe Ganttが内部的にどのように期間を日換算しているか不明なため、
-                        // ここでは「そのdateCol.dateから次のdateCol.dateまでの期間」を「期間」と見なす。
-                        // しかし、Gantt.datesはユニークな日付/X座標の組ではあるが、必ずしも連続しているわけではない。
-                        // 簡潔に、今日が `dateCol.date` から `dateCol.date + columnWidth` の範囲に含まれるかをチェックする。
-                        // ただし、これは物理的なピクセル幅に基づく推測であり、日付のロジックベースではない。
-                        // より正確には、現在のview_modeが示す期間内に今日があるかを見るべき。
-                        // 例えば 'Week' ならば今日がその週に含まれるか、'Month' ならば今日がその月に含まれるか。
-                        
-                        // Frappe Ganttが内部で日付をどのようにX座標にマッピングしているかの情報は
-                        // column_widthとdates配列から推測できる。
-                        // 最も単純なアプローチは、今日が dateCol.date で始まる期間に収まるかをチェックすること。
-                        // Frappe Ganttは通常、期間の始点にdateCol.dateを置く。
-                        // よって、dateObjが期間の開始日であり、その期間内に今日が含まれるかを確認する。
-                        
-                        // today.getTime() が dateObj.getTime() から (dateObj.getTime() + periodInMs) の範囲内か。
-                        // しかし、periodInMsを正確に計算するのは複雑。
-                        // ここではより単純に、今日が最も近い期間の開始日を探すロジックで進める。
-                        // (dateObj.getTime() === today.getTime() は、今日が期間のちょうど開始日でないとマッチしないため、
-                        // 常にfalseになることが多い)
-
-                        // そこで、closestDateCol の定義を、今日がその期間内にある最初の dateCol とするように変更する。
-                        // 例: 今日が水曜日なら、その週の月曜日（dateCol.date）のdateColを選択。
-                        
-                        // 暫定策として、dateCol.date が今日より過去で、かつ最も今日に近いものを選ぶ。
-                        // Frappe Ganttの各periodの終点までを包含するようなロジックに修正する
-                        // 例: 今日がFri May 10 2024で、dateColがSat May 04 2024 (週の始まり)。
-                        // ViewがWeekなら todayは Sat May 04 2024 の週に含まれるべき。
-
-                        // ここでの diff 計算は、期間の**開始日**と今日の絶対差を出している。
-                        // Week/Monthビューの場合、Ganttは期間の開始日を並べるが、今日がその開始日に一致するとは限らない。
-                        // 今日がどの期間に属するかを見つけるためには、「今日がその期間の開始日から終了日まで」という条件で探すべき。
-                        // ただし、Frappe Ganttの dates 配列は期間の開始日のみを持つため、期間の終了日を特定するのは難しい。
-                        // 最も安全なのは、今日が `dateCol.date` と `次のdateCol.date` の間にあるかを確認すること。
-                        // たとえば、`dateCol` が5月1日のデータ、`nextDateCol` が5月8日のデータなら、
-                        // 今日が5月1日から5月7日までの間であれば、5月1日の `dateCol` を選ぶ。
-                        
-                        // このロジックは、最も今日に近い期間（開始日）を見つけるためのもので、
-                        // 「今日が期間内にあるか」という条件を満たすように変更する必要がある。
-                        
-                        // currentGanttInstance.dates の長さは 24 なので、最後の期間に今日が入る可能性もある。
-                        // したがって、最後の期間の範囲も考慮する必要がある。
-                        
-                        // ここでいったん、日付オブジェクトの比較を柔軟にする。
-                        // `dateObj` が `today` 以前で、かつ `closestDateCol` と今日が最も近いものを選択する。
-                        // これにより、今日を *含む* 期間の先頭を見つける。
-
-                        if (dateObj <= today) { // dateColの日付が今日以前であれば候補
-                            if (diff < minDiff) {
-                                minDiff = diff;
-                                closestDateCol = dateCol;
-                            }
-                        }
-                    } else { // Quarter Day, Half Day, Day ビューは日付が連続する
-                        // 完全に一致するか、より近い日付を見つける
+                    if (dateObj <= today) { 
                         if (diff < minDiff) {
                             minDiff = diff;
                             closestDateCol = dateCol;
                         }
-                        if (dateObj.getTime() === today.getTime()) { // 今日と完全に一致する日付があれば優先
-                            closestDateCol = dateCol;
-                            break;
-                        }
+                    } else if (dateObj.getTime() === today.getTime()) { 
+                        closestDateCol = dateCol;
+                        break;
                     }
                 }
-
+                
                 if (closestDateCol) {
-                    const columnWidth = currentGanttInstance.options.column_width; // ここで取得
-                    // Frappe Ganttのdatesプロパティは、各期間の始まりの日付とX座標を持っている。
-                    // Week/Monthビューの場合、closestDateCol.xはその週/月の開始位置。
-                    // 線の位置をその期間の中央にしたい場合、columnWidthの半分を足す。
+                    const columnWidth = currentGanttInstance.options.column_width; 
                     foundTodayX = closestDateCol.x + (columnWidth / 2);
                     console.log("Calculated today line X using Frappe Gantt's internal dates:", foundTodayX);
                 } else {
@@ -601,16 +545,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // X座標が計算できた場合のみ、SVGに赤い線を描画
         if (foundTodayX !== -1) {
             const svgHeight = svg.clientHeight; 
 
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             line.setAttribute('x1', foundTodayX);
-            line.setAttribute('y1', 0); // SVGの上端から開始
+            line.setAttribute('y1', 0); 
             line.setAttribute('x2', foundTodayX);
-            line.setAttribute('y2', svgHeight); // SVGの下端まで
-            line.classList.add('today-line'); // CSSクラスを適用してスタイリング
+            line.setAttribute('y2', svgHeight); 
+            line.classList.add('today-line'); 
 
             svg.appendChild(line);
             console.log("Today line successfully added at X:", foundTodayX);
@@ -707,7 +650,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const taskDetails = await response.json();
-            showEditTaskPopupUI(taskDetails); 
+            // Assuming taskDetails.id is available and correct
+            showEditTaskPopupUI(taskDetails);
         } catch (error) {
             console.error('Error fetching task details for popup:', error);
             alert(`Error fetching task details: ${error.message}`);
@@ -722,6 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const taskDetails = await response.json();
+            // Assuming taskDetails.id is available and correct
             showViewTaskDetailsPopupUI(taskDetails);
         } catch (error) {
             console.error('Error fetching task details for view popup:', error);
@@ -770,6 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else {
                                 console.log('Task order updated successfully.');
                                 if (sortBy !== 'display_order') { 
+                                    // 別のソート順で表示していた場合は、display_orderに戻す
                                     fetchAndRenderActiveTasks('display_order'); 
                                 }
                             }
@@ -781,6 +727,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                 });
             } else if (sortableInstance) {
+                // display_order 以外のソートの場合やタスクが0件の場合は並び替えを無効化
                 sortableInstance.destroy();
                 sortableInstance = null;
             }
@@ -902,7 +849,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             hideEditTaskPopup(); 
             fetchAndRenderActiveTasks(); 
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error updating task:', error);
             editErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
         }

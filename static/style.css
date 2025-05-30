@@ -12,7 +12,7 @@
 /* Custom Styles for Frappe Gantt */
 /* Frappe Ganttによって#gantt-target内に生成されるSVG要素の高さ調整 */
 #gantt-target {
-    height: 350px; /* Fixed height for the Gantt chart viewport */
+    min-height: 350px; /* 'height' を 'min-height' に変更 */
     overflow-x: auto; /* Enable horizontal scrollbar if Frappe Gantt's SVG content overflows */
     /* Other visual styles like background, padding, shadow are handled by Tailwind on #gantt-chart-area */
 }
@@ -25,18 +25,36 @@
     height: 100%;
 }
 
-/* ★★★ ADDED: Styles for today's line ★★★ */
+/* ADDED: Styles for today's line */
 .today-line {
     stroke: red !important; /* 赤い線 */
     stroke-width: 2 !important; /* 線の太さ */
-    pointer-events: none; /* 線がクリックイベントをブロックしないようにする */
+    pointer-events: none !important; /* 線がクリックイベントをブロックしないようにする */
 }
-/* ★★★ ADDED: Styles for is_not_main tasks in Gantt chart ★★★ */
+
+/* ADDED: Styles for Frappe Gantt text elements (larger font size) */
+.gantt .bar-label, /* タスクバー上のラベル (タスク名) */
+.gantt .date,      /* グリッドの日付ラベル */
+.gantt .lower-text, /* その他の情報（依存関係など） */
+.gantt .upper-text { /* ヘッダーの日付など */
+    font-size: 14px !important; /* デフォルトより少し大きくします。必要に応じて調整してください。 */
+}
+
+/* ADDED: Styles for is_not_main tasks in Gantt chart */
 .gantt-task-not-main .bar {
     fill: #d8b4fe !important; /* 薄い紫色 (Tailwind purple-300相当) */
 }
 .gantt-task-not-main .bar-progress {
     fill: #a78bfa !important; /* 少し濃い目の紫 (Tailwind purple-400相当) */
+}
+
+/* NEW: Styles for 'doing' tasks in Gantt chart (Orange) */
+/* is_not_main の後に書くことで、doing の特異性が同じなら doing が優先される */
+.gantt-task-doing .bar {
+    fill: rgb(249, 115, 22) !important; /* Tailwind orange-500 に相当 */
+}
+.gantt-task-doing .bar-progress {
+    fill: rgb(234, 88, 12) !important; /* Tailwind orange-600 に相当 (進捗バーは少し濃く) */
 }
 
 /* NEW: Styles for dummy tasks to make them invisible */
@@ -95,9 +113,34 @@
     min-width: 0 !important; /* Ensures shrinking */
 }
 
-/* MODIFIED: Style for tasks with status 'doing' - changed to orange */
-/* 直接RGB値を指定した方でうまくいったとのことなので、こちらに統一 */
-#active-tasks-ul li.task-item.task-status-doing { /* セレクタの詳細度を上げた */
-    background-color: rgb(255, 247, 237) !important; /* Tailwindのorange-100に相当 */
-    border-left-color: rgb(249, 115, 22) !important;  /* Tailwindのorange-500に相当 */
+/* ★★★ ADDED: 全ての li 要素の左ボーダーを初期状態で強制的にリセット ★★★ */
+/* これにより、意図しないデフォルトボーダーが効かないようにする */
+#active-tasks-ul li.task-item {
+    border-left-width: 0px !important;
+    border-left-style: none !important;
+    border-left-color: transparent !important; /* 透明にして確実に非表示に */
+}
+
+
+/* MODIFIED: Style for tasks with status 'doing' - changed to green border and remove orange background */
+#active-tasks-ul li.task-item.task-status-doing-border { /* 新しいクラス名で緑の太線 */
+    border-left-width: 4px !important;
+    border-left-style: solid !important; /* 明示的にsolidスタイルを指定 */
+    border-left-color: rgb(34, 197, 94) !important; /* Tailwind green-500 に相当 */
+}
+
+/* NEW: Styles for tasks due within a week (Orange) - ユーザーからの最新の指定を適用 */
+#active-tasks-ul li.task-item.task-status-pending { /* 新しいクラス名でオレンジの背景と枠線 */
+    background-color: rgb(255, 179, 92) !important; /* ユーザー指定の新しい色 */
+    border-left-width: 4px !important;
+    border-left-style: solid !important; /* 明示的にsolidスタイルを指定 */
+    border-left-color: rgb(148, 62, 0) !important; /* ユーザー指定の新しい色 */
+}
+
+/* NEW: Styles for overdue tasks (Red) - ユーザーからの最新の指定を適用 */
+#active-tasks-ul li.task-item.task-status-overdue { /* 新しいクラス名で赤の背景と枠線 */
+    background-color: rgb(255, 135, 135) !important; /* ユーザー指定の新しい色 */
+    border-left-width: 4px !important;
+    border-left-style: solid !important; /* 明示的にsolidスタイルを指定 */
+    border-left-color: rgb(135, 0, 0) !important; /* ユーザー指定の新しい色 */
 }

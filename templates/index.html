@@ -29,7 +29,8 @@
                     <!-- Task list will be populated here by main.js -->
                 </ul>
             </div>
-            <div id="gantt-chart-area" class="bg-white p-6 rounded-lg shadow-md flex flex-col overflow-hidden">
+            <!-- 変更前: <div id="gantt-chart-area" class="bg-white p-6 rounded-lg shadow-md flex flex-col overflow-hidden"> -->
+            <div id="gantt-chart-area" class="bg-white p-6 rounded-lg shadow-md flex flex-col"> <!-- ★★★ 'overflow-hidden' を削除 ★★★ -->
                 <h3 class="text-xl font-semibold mb-4 text-gray-700">Gantt Chart</h3>
                 <div id="gantt-target" class="flex-grow"></div> <!-- Target for Frappe Gantt -->
             </div>
