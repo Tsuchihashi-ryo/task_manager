@@ -88,8 +88,8 @@
 
 /* Base list item style where needed, if Tailwind is not fully applied to li elements */
 /* In this setup, active task items get Tailwind directly, but this is a fallback for others. */
-.task-list, 
-.task-list-condensed { 
+.task-list,
+.task-list-condensed {
     list-style-type: none;
     padding-left: 0;
 }
@@ -98,7 +98,7 @@
 /* This is often handled by Tailwind's `divide-y` & `last:border-b-0` but kept for robustness. */
 .task-list li:last-child,
 .task-list-condensed li:last-child {
-    border-bottom: none; 
+    border-bottom: none;
 }
 
 /* Flex grow/shrink/basis for specific IDs for 2:3 ratio */
@@ -122,13 +122,6 @@
 }
 
 
-/* MODIFIED: Style for tasks with status 'doing' - changed to green border and remove orange background */
-#active-tasks-ul li.task-item.task-status-doing-border { /* 新しいクラス名で緑の太線 */
-    border-left-width: 4px !important;
-    border-left-style: solid !important; /* 明示的にsolidスタイルを指定 */
-    border-left-color: rgb(34, 197, 94) !important; /* Tailwind green-500 に相当 */
-}
-
 /* NEW: Styles for tasks due within a week (Orange) - ユーザーからの最新の指定を適用 */
 #active-tasks-ul li.task-item.task-status-pending { /* 新しいクラス名でオレンジの背景と枠線 */
     background-color: rgb(255, 179, 92) !important; /* ユーザー指定の新しい色 */
@@ -143,4 +136,15 @@
     border-left-width: 4px !important;
     border-left-style: solid !important; /* 明示的にsolidスタイルを指定 */
     border-left-color: rgb(135, 0, 0) !important; /* ユーザー指定の新しい色 */
+}
+
+/* MODIFIED: Style for tasks with status 'doing' - moved to the end, now uses box-shadow for full border */
+#active-tasks-ul li.task-item.task-status-doing-border { /* 全体を囲む緑の枠線 */
+    /* 既存の border-left-* は不要なので削除またはコメントアウト */
+    /* border-left-width: 4px !important; */
+    /* border-left-style: solid !important; */
+    /* border-left-color: rgb(34, 197, 94) !important; */
+
+    /* box-shadow を使ってタスクカード全体を囲む緑色の枠線を追加 */
+    box-shadow: 0 0 0 4px rgb(34, 197, 94) !important; /* 0オフセット、0ぼかし、2pxのスプレッド、緑色 */
 }

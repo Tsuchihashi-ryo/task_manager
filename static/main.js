@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tasks.forEach(task => { 
             const li = document.createElement('li');
-            li.className = 'task-item flex items-center h-8 px-4 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-1'; // border-l-4 を削除済み
+            li.className = 'task-item flex items-center h-8 px-4 rounded-md bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all duration-200 mb-2'; // border-l-4 を削除済み
             li.dataset.taskId = task.id; 
             li.id = `task-item-${task.id}`;
 
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const oneWeekBeforeLimit = new Date(limitDate);
                 oneWeekBeforeLimit.setDate(limitDate.getDate() - 7);
                 oneWeekBeforeLimit.setHours(0, 0, 0, 0);
-
+                
                 if (today.getTime() >= oneWeekBeforeLimit.getTime()) { // 今日が1週間前から期限日の間
                     li.classList.add('task-status-pending'); // オレンジ色
                 }
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("renderGraphicalGantt called.");
         ganttTarget.innerHTML = ''; 
         currentGanttInstance = null; 
-
+        
         // Calculate dates for dummy tasks to control the Gantt chart display range
         const today = new Date();
         const twoDaysAgo = new Date(today);
@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCompletedTasks(tasks);
         } catch (error) {
             console.error('Error fetching completed tasks:', error);
-            completedTasksListArea.innerHTML = `<p class="text-red-600">Error loading completed tasks: ${error.message}</p>`; 
+            completedTasksListArea.innerHTML = `<p class="text-red-600">Error loading completed tasks: ${error.message}</pмещение`; 
         }
     }
 
@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let scheduled_end_date = document.getElementById('task-scheduled-end-date').value;
 
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) { 
-            addErrorMessageDiv.textContent = 'Both scheduled start and end dates must be provided if one is present.';
+            addErrorMessageDiv.textContent = 'の両方の日時が提供されなければなりません。';
             return;
         }
 
@@ -808,14 +808,14 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchAndRenderActiveTasks(); 
         } catch (error) {
             console.error('Error adding task:', error);
-            addErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
+            addErrorMessageDiv.textContent = `Error: ${error.error || '予期せぬエラーが発生しました。'}`;
         }
     });
 
     editTaskForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         editErrorMessageDiv.textContent = '';
-
+        
         const taskId = editTaskIdInput.value;
         const name = document.getElementById('edit-task-name').value;
         const detail = document.getElementById('edit-task-detail').value;
@@ -824,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let scheduled_end_date = document.getElementById('edit-task-scheduled-end-date').value;
 
         if ((scheduled_start_date && !scheduled_end_date) || (!scheduled_start_date && scheduled_end_date)) {
-            editErrorMessageDiv.textContent = 'Both scheduled start and end dates must be provided if one is present.';
+            editErrorMessageDiv.textContent = '両方のスケジュール開始日と終了日が提供されなければなりません。';
             return;
         }
         
@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         catch (error) {
             console.error('Error updating task:', error);
-            editErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
+            editErrorMessageDiv.textContent = `Error: ${error.error || '予期せぬエラーが発生しました。'}`;
         }
     });
 
@@ -877,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchAndRenderDeletedTasks(); 
         } catch (error) {
             console.error('Error deleting task:', error);
-            deleteConfirmErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
+            deleteConfirmErrorMessageDiv.textContent = `Error: ${error.error || '予期せぬエラーが発生しました。'}`;
         }
     });
     
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchAndRenderDeletedTasks(); 
             } catch (error) {
                 console.error('Error restoring task:', error);
-                alert(`Error restoring task: ${error.error || 'An unexpected error occurred.'}`);
+                alert(`Error restoring task: ${error.error || '予期せぬエラーが発生しました。'}`);
             }
         }
     }
@@ -947,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchAndRenderActiveTasks(); 
         } catch (error) {
             console.error('Error during start/stop task:', error);
-            editErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
+            editErrorMessageDiv.textContent = `Error: ${error.error || '予期せぬエラーが発生しました。'}`;
         }
     }
 
@@ -1000,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchAndRenderCompletedTasks(); 
         } catch (error) { 
             console.error('Error ending task:', error);
-            editErrorMessageDiv.textContent = `Error: ${error.error || 'An unexpected error occurred.'}`;
+            editErrorMessageDiv.textContent = `Error: ${error.error || '予期せぬエラーが発生しました。'}`;
         }
     });
     
