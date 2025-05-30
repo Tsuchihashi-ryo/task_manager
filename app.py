@@ -121,7 +121,7 @@ def get_task_detail(task_id):
     API endpoint to fetch details for a specific task by its ID.
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if task:
             return jsonify(task_to_dict(task))
         else:
@@ -135,7 +135,7 @@ def update_task(task_id):
     API endpoint to update an existing task's details.
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 
@@ -198,7 +198,7 @@ def delete_task_route(task_id):
     API endpoint to soft-delete a task (mark as 'deleted').
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 
@@ -223,7 +223,7 @@ def start_task_route(task_id):
     API endpoint to mark a task as 'doing' and set its actual start time.
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 
@@ -254,7 +254,7 @@ def pause_task_route(task_id):
     Keeps actual_start_date if already set, but clears actual_end_date (if it was set).
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 
@@ -282,7 +282,7 @@ def end_task_route(task_id):
     API endpoint to mark a task as 'completed' and set its actual end time.
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 
@@ -325,7 +325,7 @@ def update_task_order():
         # Use a nested transaction to ensure all order updates succeed or fail together.
         with db.session.begin_nested(): 
             for index, task_id in enumerate(ordered_ids):
-                task = Task.query.get(task_id)
+                task = db.session.get(Task, task_id)
                 if task:
                     task.display_order = index # Update display_order based on new position
                     task.updated_at = datetime.utcnow()
@@ -368,7 +368,7 @@ def restore_task_route(task_id):
     API endpoint to restore a 'completed' or 'deleted' task back to 'todo'.
     """
     try:
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
 

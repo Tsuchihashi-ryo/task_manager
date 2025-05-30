@@ -60,16 +60,16 @@
     fill: rgb(186, 186, 186) !important; /* Tailwind gray-600 相当 */
 }
 .gantt-task-todo .bar-progress {
-    fill: rgb(74, 74, 74) !important; /* Tailwind gray-700 相当 (進捗バーは少し濃く) */
+    fill: rgb(255, 69, 69) !important; /* Tailwind gray-700 相当 (進捗バーは少し濃く) */
 }
 
 /* MODIFIED: Styles for is_not_main tasks in Gantt chart */
 /* gantt-task-todo の後に記述することで、is_not_main が優先されるように変更 */
 .gantt-task-not-main .bar {
-    fill: #d8b4fe !important; /* 薄い紫色 (Tailwind purple-300相当) */
+    fill: #ffe77a !important; /* 薄い紫色 (Tailwind purple-300相当) */
 }
 .gantt-task-not-main .bar-progress {
-    fill: #a78bfa !important; /* 少し濃い目の紫 (Tailwind purple-400相当) */
+    fill: #ff6e34 !important; /* 少し濃い目の紫 (Tailwind purple-400相当) */
 }
 
 /* NEW: Styles for dummy tasks to make them invisible */
