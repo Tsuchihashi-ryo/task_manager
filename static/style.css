@@ -119,7 +119,8 @@
     border-left-width: 0px !important;
     border-left-style: none !important;
     border-left-color: transparent !important; /* 透明にして確実に非表示に */
-}
+    border: 2px solid #959494 !important; /* 灰色の枠線を追加 */
+ }
 
 
 /* NEW: Styles for tasks due within a week (Orange) - ユーザーからの最新の指定を適用 */
