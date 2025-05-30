@@ -1,5 +1,7 @@
+# app.py
+
 from flask import Flask, request, jsonify, render_template
-from models import db, Task
+from models import db, Task # dbとTaskはmodels.pyからインポート
 from datetime import datetime
 from sqlalchemy import or_
 
@@ -11,20 +13,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Disable modification trac
 # Initialize SQLAlchemy with the Flask app
 db.init_app(app)
 
+# init_database関数はそのまま残す
 def init_database():
     """Initializes the database and creates tables if they don't exist."""
+    print("Initializing database...") # デバッグ用として追加
     with app.app_context():
-        # Import models here to ensure they are registered with SQLAlchemy before create_all
-        # This is crucial if models are defined in a separate file (like models.py)
-        # and rely on `db` instance from this file.
-        # However, in our current setup, models.py imports `db` from this file,
-        # and Task is already imported at the top of app.py.
-        # So, direct import here might not be strictly necessary if Task is already in scope
-        # but it's a good practice for clarity or more complex setups.
-        # from models import Task # Task is already imported globally
         db.create_all()
+    print("Database initialized.") # デバッグ用として追加
 
-init_database() # Call the database initialization function once when the app starts
+# init_database() # グローバルスコープでの呼び出しは削除しました
 
 @app.route('/')
 def index():
@@ -155,7 +152,7 @@ def update_task(task_id):
         
         limit_date = parse_datetime(limit_date_str)
         if not limit_date:
-            return jsonify({'error': f'Invalid limit_date format: {limit_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+            return jsonify({'error': f'Invalid limit_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
 
         # Extract and validate optional date fields
         scheduled_start_date_str = data.get('scheduled_start_date')
@@ -165,15 +162,18 @@ def update_task(task_id):
         scheduled_end_date = parse_datetime(scheduled_end_date_str)
 
         if scheduled_start_date_str and not scheduled_start_date:
-             return jsonify({'error': f'Invalid scheduled_start_date format: {scheduled_start_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+             return jsonify({'error': f'Invalid scheduled_start_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
         
         if scheduled_end_date_str and not scheduled_end_date:
-            return jsonify({'error': f'Invalid scheduled_end_date format: {scheduled_end_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+            return jsonify({'error': f'Invalid scheduled_end_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
 
         # Validate consistency of scheduled dates
         if (scheduled_start_date and not scheduled_end_date) or \
            (not scheduled_start_date and scheduled_end_date):
             return jsonify({'error': 'Both scheduled_start_date and scheduled_end_date must be provided if one is present, or both left empty.'}), 400
+
+        # Extract is_not_main (newly added for update)
+        is_not_main = data.get('is_not_main', task.is_not_main) # Default to existing value if not provided
 
         # Update task attributes
         task.name = name
@@ -181,6 +181,7 @@ def update_task(task_id):
         task.limit_date = limit_date
         task.scheduled_start_date = scheduled_start_date
         task.scheduled_end_date = scheduled_end_date
+        task.is_not_main = is_not_main # ★★★ ADDED: Update is_not_main ★★★
         # is_not_main and status are handled by other specific routes or not updated here by default
         task.updated_at = datetime.utcnow() # Update timestamp
 
@@ -244,6 +245,36 @@ def start_task_route(task_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to start task: {str(e)}'}), 500
+
+# NEW: API endpoint to "pause" or "stop" a task (return to todo)
+@app.route('/pause_task/<int:task_id>', methods=['POST'])
+def pause_task_route(task_id):
+    """
+    API endpoint to revert a 'doing' task back to 'todo' status.
+    Keeps actual_start_date if already set, but clears actual_end_date (if it was set).
+    """
+    try:
+        task = Task.query.get(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+
+        if task.status != 'doing':
+            return jsonify({'error': 'Task is not in a "doing" state and cannot be paused.'}), 400
+
+        task.status = 'todo'
+        task.actual_end_date = None # Clear end date if it was set (e.g. if it was completed and then restored)
+        task.updated_at = datetime.utcnow()
+
+        db.session.commit()
+        return jsonify({
+            'message': 'Task paused (returned to todo)',
+            'task_id': task.id,
+            'new_status': task.status
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to pause task: {str(e)}'}), 500
+
 
 @app.route('/end_task/<int:task_id>', methods=['POST'])
 def end_task_route(task_id):
@@ -381,7 +412,7 @@ def add_task():
     
     limit_date = parse_datetime(limit_date_str)
     if not limit_date:
-        return jsonify({'error': f'Invalid limit_date format: {limit_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+        return jsonify({'error': f'Invalid limit_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
 
     # Optional fields
     detail = data.get('detail')
@@ -394,9 +425,9 @@ def add_task():
 
     # Validate format of optional dates if strings were provided but parsing failed
     if scheduled_start_date_str and not scheduled_start_date:
-        return jsonify({'error': f'Invalid scheduled_start_date format: {scheduled_start_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+        return jsonify({'error': f'Invalid scheduled_start_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
     if scheduled_end_date_str and not scheduled_end_date:
-        return jsonify({'error': f'Invalid scheduled_end_date format: {scheduled_end_date_str}. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
+        return jsonify({'error': f'Invalid scheduled_end_date format: . Use YYYY-MM-DD or YYYY-MM-DDTHH:MM'}), 400
             
     # Validate consistency: if one scheduled date is given, the other must also be.
     if (scheduled_start_date and not scheduled_end_date) or \
@@ -423,7 +454,7 @@ def add_task():
         return jsonify({'error': f'Failed to create task: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    # This block runs only when the script is executed directly (e.g., `python app.py`)
-    # db.create_all() is now handled by init_database() called earlier.
+    # このブロックでのみデータベースを初期化するように変更
+    init_database() # <-- init_database()の呼び出しをここに移動
     # Run the Flask development server
     app.run(debug=True) # debug=True enables auto-reloading and debugger

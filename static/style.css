@@ -1,338 +1,103 @@
-/* General Body Styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background-color: #f4f4f4;
-    color: #333;
-    line-height: 1.6;
+/*
+ * style.css
+ * This file is now primarily for custom styles not easily achievable with Tailwind CSS,
+ * or for overriding specific component library styles (like Frappe Gantt or SortableJS)
+ * that don't expose utility-friendly classes.
+ *
+ * Most general styling like layout, typography, spacing, colors, shadows
+ * are now handled directly with Tailwind utility classes in index.html.
+ */
+
+/* ==================================================================================== */
+/* Custom Styles for Frappe Gantt */
+/* Frappe Ganttによって#gantt-target内に生成されるSVG要素の高さ調整 */
+#gantt-target {
+    height: 350px; /* Fixed height for the Gantt chart viewport */
+    overflow-x: auto; /* Enable horizontal scrollbar if Frappe Gantt's SVG content overflows */
+    /* Other visual styles like background, padding, shadow are handled by Tailwind on #gantt-chart-area */
 }
 
-/* --- Header --- */
-#app-header {
-    background-color: #0056b3; /* A darker blue for contrast */
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    /* position: fixed; /* Uncomment if a fixed header is desired */
-    /* top: 0; */
-    /* left: 0; */
-    /* width: 100%; */
-    /* z-index: 500; /* Ensure it's above other non-popup content */
-}
-
-#app-header h1 {
-    margin: 0;
-    font-size: 1.8em;
-    color: white; /* Ensure h1 text is white */
-}
-
-#header-actions button {
-    background-color: #007bff; /* Standard button blue */
-    border: 1px solid #007bff; /* Optional: add a border */
-}
-
-#header-actions button:hover {
-    background-color: #0069d9;
-}
-
-
-/* MAIN CONTAINER - NOW 100% WIDTH */
-.main-container {
-    padding: 20px;
-    width: 100%; /* Changed to 100% as per request */
-    /* max-width and margin: auto removed as per request */
-    /* margin-top: 70px; /* Add margin if header is fixed to prevent overlap */
-}
-
-/* --- Typography --- */
-h1, h2, h3, h4 {
-    color: #333;
-}
-
-/* --- Buttons --- */
-button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
-    margin: 5px;
-}
-
-button:hover {
-    opacity: 0.9;
-}
-
-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-button[type="button"] { /* Specific styling for non-submit buttons if needed */
-    background-color: #6c757d;
-}
-button[type="button"]:hover:not(:disabled) {
-    background-color: #5a6268;
-}
-
-
-/* --- Popup Styles --- */
-.popup-overlay {
-    display: none; /* Hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+#gantt-target svg {
+    /* This makes the SVG fill the entire height of #gantt-target,
+     * distributing space evenly if there are fewer tasks.
+     * Frappe Gantt typically scales its content within the SVG viewport.
+     */
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay for better focus */
-    z-index: 1000;
 }
 
-.popup {
-    display: none; /* Hidden by default */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #fff;
-    padding: 25px;
-    border-radius: 8px; /* Softer corners */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1001;
-    width: 90%;
-    max-width: 450px; /* Max width for larger screens */
-    box-sizing: border-box;
+/* ★★★ ADDED: Styles for today's line ★★★ */
+.today-line {
+    stroke: red !important; /* 赤い線 */
+    stroke-width: 2 !important; /* 線の太さ */
+    pointer-events: none; /* 線がクリックイベントをブロックしないようにする */
+}
+/* ★★★ ADDED: Styles for is_not_main tasks in Gantt chart ★★★ */
+.gantt-task-not-main .bar {
+    fill: #d8b4fe !important; /* 薄い紫色 (Tailwind purple-300相当) */
+}
+.gantt-task-not-main .bar-progress {
+    fill: #a78bfa !important; /* 少し濃い目の紫 (Tailwind purple-400相当) */
 }
 
-.popup h3, .popup h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #0056b3;
+/* NEW: Styles for dummy tasks to make them invisible */
+.gantt-dummy-task {
+    opacity: 0 !important; /* Make bar and text completely transparent */
+    pointer-events: none !important; /* Ensure they don't interfere with mouse events */
 }
-
-/* Form Element Styling within Popups */
-.popup form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    font-size: 0.9em;
+.gantt-dummy-task text {
+    fill: transparent !important; /* Ensure task name is transparent */
 }
-
-.popup form input[type="text"],
-.popup form input[type="datetime-local"],
-.popup form textarea {
-    display: block;
-    width: calc(100% - 20px); /* Full width minus padding */
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 0.95em;
+.gantt-dummy-task > rect { /* Specific selector for main bar rect */
+    fill: transparent !important;
 }
-
-.popup form input[type="checkbox"] {
-    display: inline-block;
-    width: auto;
-    margin-right: 8px;
-    vertical-align: middle;
-}
-
-.popup form label[for*="is_not_main"] {
-    display: inline-block;
-    width: auto;
-    font-weight: normal;
-    margin-bottom: 15px;
-}
-
-.popup form textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-.popup form button { /* Buttons inside popups */
-    width: auto; /* Allow buttons to size based on content */
-    padding: 10px 20px;
-    margin-right: 10px; /* Space between buttons */
-}
-
-.popup form button:last-child {
-    margin-right: 0;
-}
-
-.popup form .error-message { /* Common class for error messages in popups */
-    color: red;
-    font-size: 0.9em;
-    margin-bottom: 10px;
+.gantt-dummy-task > rect.bar-progress { /* Specific selector for progress bar rect */
+    fill: transparent !important;
 }
 
 
-/* --- Main Layout Areas --- */
-/* UPPER AREA - Now wraps task list and Gantt chart, 90% width, centered */
-#upper-area {
-    display: flex;
-    flex-direction: row; /* 明示的にrowを指定 */
-    gap: 20px; /* Space between task list and gantt chart */
-    margin-bottom: 30px; /* Space below this section */
-    width: 90%; /* 90% width as requested */
-    margin-left: auto; /* Center horizontally */
-    margin-right: auto; /* Center horizontally */
+/* ==================================================================================== */
+/* Custom Styles for SortableJS */
+/* These classes are applied during drag-and-drop operations */
+.sortable-ghost {
+    opacity: 0.5;
+    background-color: theme('colors.gray.200'); /* Tailwind's gray-200 color */
+    border: 2px dashed theme('colors.blue.500'); /* Tailwind's blue-500 color */
+    border-radius: theme('borderRadius.md'); /* Match other elements' rounded corners */
 }
 
+/* ==================================================================================== */
+/* Other minor custom adjustments not practical with Tailwind */
+
+/* Base list item style where needed, if Tailwind is not fully applied to li elements */
+/* In this setup, active task items get Tailwind directly, but this is a fallback for others. */
+.task-list, 
+.task-list-condensed { 
+    list-style-type: none;
+    padding-left: 0;
+}
+
+/* Ensuring no bottom border on the last item of these lists */
+/* This is often handled by Tailwind's `divide-y` & `last:border-b-0` but kept for robustness. */
+.task-list li:last-child,
+.task-list-condensed li:last-child {
+    border-bottom: none; 
+}
+
+/* Flex grow/shrink/basis for specific IDs for 2:3 ratio */
+/* Tailwindのクラスとの優先順位を確実にするため !important を追加 */
 #task-list-area {
-    flex: 2 1 0%; /* flex-grow: 2, flex-shrink: 1, flex-basis: 0% */
-    min-width: 0; /* 必要であれば縮小可能にする */
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex: 2 1 0% !important; /* flex-grow: 2, flex-shrink: 1, flex-basis: 0% */
+    min-width: 0 !important; /* Ensures shrinking */
 }
 
 #gantt-chart-area {
-    flex: 3 1 0%; /* flex-grow: 3, flex-shrink: 1, flex-basis: 0% */
-    min-width: 0; /* 必要であれば縮小可能にする */
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    min-height: 200px; 
-    display: flex; 
-    flex-direction: column; 
+    flex: 3 1 0% !important; /* flex-grow: 3, flex-shrink: 1, flex-basis: 0% */
+    min-width: 0 !important; /* Ensures shrinking */
 }
 
-#gantt-target {
-    width: 100%; 
-    height: 350px; 
-    overflow-x: auto; 
-}
-
-/* ★★★ ここから追加・変更 ★★★ */
-/* Frappe Ganttによって#gantt-target内に生成されるSVG要素の高さ調整 */
-#gantt-target svg {
-    height: 100%; /* 親である#gantt-targetの高さ全体を埋めるようにする */
-}
-/* ★★★ ここまで追加・変更 ★★★ */
-
-/* LOWER AREA - Now wraps completed and deleted tasks, 90% width, centered */
-#lower-area {
-    display: flex;
-    gap: 20px; /* Space between completed and deleted task sections */
-    width: 90%; /* 90% width as requested */
-    margin-left: auto; /* Center horizontally */
-    margin-right: auto; /* Center horizontally */
-    margin-bottom: 20px; /* Add some space below */
-}
-
-.bottom-section {
-    flex: 1; /* Each section takes equal space */
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    min-height: 200px; /* Ensure they have some height even if empty */
-}
-
-/* --- Task List Styling (General for all lists) --- */
-.task-list, 
-#simple-gantt-list,
-.task-list-condensed { /* Applied to completed/deleted lists in JS */
-    list-style-type: none;
-    padding-left: 0;
-    margin-top: 10px;
-}
-
-.task-list li, /* For active tasks */
-#simple-gantt-list li,
-.task-list-condensed li { /* For completed/deleted tasks */
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    font-size: 0.95em;
-    cursor: default; /* Default cursor for non-interactive lists */
-}
-
-.task-list li:last-child,
-#simple-gantt-list li:last-child,
-.task-list-condensed li:last-child {
-    border-bottom: none;
-}
-
-/* Specific to active task items for interactivity */
-#active-tasks-ul .task-item {
-    background-color: #f9f9f9;
-    margin-bottom: 5px; /* Slightly reduce margin to compensate for fixed height */
-    border-radius: 4px;
-    border-left: 5px solid #007bff; /* Highlight color */
-    cursor: pointer; /* Indicate clickable */
-    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    
-    height: 30px; /* Target height to align with Gantt bar visual */
-    padding: 0 10px; /* Adjust padding: 0 top/bottom, 10px left/right */
-    display: flex;
-    align-items: center; /* Vertically center content */
-    overflow: hidden; /* Hide content that overflows the fixed height */
-}
-
-#active-tasks-ul .task-item:hover {
-    background-color: #e9ecef;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-#active-tasks-ul .task-item .task-name {
-    font-weight: bold;
-    white-space: nowrap; /* Prevent task name from wrapping */
-    overflow: hidden; /* Hide overflow from task name if too long */
-    text-overflow: ellipsis; /* Add ellipsis if task name is too long */
-    flex-grow: 1; /* Allow task name to take available space */
-}
-#active-tasks-ul .task-item .task-name.minor-task {
-    font-weight: normal;
-    color: #555;
-}
-
-/* Hide date details in the compact active task list to fit height */
-#active-tasks-ul .task-item .task-limit-date,
-#active-tasks-ul .task-item .task-scheduled-dates {
-    display: none; 
-}
-
-
-/* SortableJS helper classes */
-.sortable-ghost {
-    opacity: 0.5;
-    background-color: #e0e0e0; /* More distinct ghosting */
-    border: 1px dashed #007bff;
-}
-
-.sortable-chosen {
-    /* No specific style needed here currently, ghost is enough */
-}
-
-.sortable-drag {
-    /* No specific style needed here currently */
-}
-
-/* Styling for Restore buttons in completed/deleted lists */
-.task-list-condensed .task-item-condensed {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.task-list-condensed .restore-btn {
-    background-color: #28a745; /* Green for restore */
-    color: white;
-    padding: 3px 8px; /* Smaller padding for condensed lists */
-    font-size: 0.8em;
-    border-radius: 3px;
-    margin-left: 10px; /* Space from the task text */
-    cursor: pointer;
-}
-
-.task-list-condensed .restore-btn:hover {
-    background-color: #218838;
+/* MODIFIED: Style for tasks with status 'doing' - changed to orange */
+/* 直接RGB値を指定した方でうまくいったとのことなので、こちらに統一 */
+#active-tasks-ul li.task-item.task-status-doing { /* セレクタの詳細度を上げた */
+    background-color: rgb(255, 247, 237) !important; /* Tailwindのorange-100に相当 */
+    border-left-color: rgb(249, 115, 22) !important;  /* Tailwindのorange-500に相当 */
 }
