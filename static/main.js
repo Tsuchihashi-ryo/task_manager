@@ -368,9 +368,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // customClass ロジック（前回修正済み）
             if (task.status === 'doing') {
+                // 'doing' タスクは専用のスタイル（オレンジ）
                 customClass = 'gantt-task-doing';
-            } 
+            } else if (task.status === 'todo') {
+                // 'todo' タスク（未開始）に専用のスタイル（灰色）。
+                // is_not_main や doing との優先順位はCSSの記述順に依存。
+                customClass = 'gantt-task-todo';
+            }
+
             if (task.is_not_main) {
+                // is_not_main は他のステータスと併用可能なので、既存のクラスに追加される
+                // CSSの記述順が 'gantt-task-not-main' の方が新しい 'gantt-task-todo' より後であれば、
+                // 'todo' かつ 'is_not_main' の場合は紫が優先される。
                 customClass = (customClass ? customClass + ' ' : '') + 'gantt-task-not-main';
             }
 
@@ -379,13 +388,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             return {
-                id: String(task.id), 
+                id: String(task.id),
                 name: task.name,
-                start: startDate, 
-                end: endDate,     
+                start: startDate,
+                end: endDate,
                 progress: progress,
-                dependencies: '', 
-                custom_class: customClass 
+                dependencies: '',
+                custom_class: customClass
             };
         }).filter(t => t !== null); 
 
