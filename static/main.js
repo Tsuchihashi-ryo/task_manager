@@ -45,6 +45,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const deletedTasksListArea = document.getElementById('deleted-tasks-list');
 
     // --- Global State Variables ---
+    let activeTasks = [];     // 現在アクティブなタスクのデータを保持する配列
+    let completedTasks = [];  // 完了したタスクのデータを保持する配列
+    let deletedTasks = [];    // 削除したタスクのデータを保持する配列
+
     let currentEditTaskDetails = null; // Stores the full details of the task being edited
     let sortableInstance = null; 
     let currentGanttInstance = null; 
@@ -343,11 +347,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderGraphicalGantt(tasks) { 
+    function renderGraphicalGantt(tasksToRender) { // 引数名を変更して、これがグローバル activeTasks であることを明確にする
         console.log("renderGraphicalGantt called.");
-        ganttTarget.innerHTML = ''; 
-        currentGanttInstance = null; 
-        
+        ganttTarget.innerHTML = '';
+        currentGanttInstance = null;
+            
         // Calculate dates for dummy tasks to control the Gantt chart display range
         const today = new Date();
         const twoDaysAgo = new Date(today);
@@ -361,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Helper to format date for Frappe Gantt's 'YYYY-MM-DD' requirement
         const formatDateForGantt = (date) => date.toISOString().split('T')[0];
 
-        const ganttTasks = tasks.map(task => { 
+        const ganttTasks = tasksToRender.map(task => { // ★ここを修正★
             const startDate = task.scheduled_start_date ? task.scheduled_start_date.split('T')[0] : null; 
             const endDate = task.scheduled_end_date ? task.scheduled_end_date.split('T')[0] : null; 
             
@@ -415,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dependencies: '',
                 custom_class: customClass
             };
-        }).filter(t => t !== null); 
+        }).filter(t => t !== null);
 
         // Add dummy tasks to force the date range from today-2 to today+3months
         ganttTasks.unshift({ 
@@ -439,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 削除: Ganttタスクの強制ソートを削除済み
         // ganttTasks.sort((a, b) => new Date(a.start) - new Date(b.start)); 
 
-        const actualVisibleTasks = tasks.filter(t => t.scheduled_start_date && t.scheduled_end_date);
+        const actualVisibleTasks = tasksToRender.filter(t => t.scheduled_start_date && t.scheduled_end_date); // ★ここを修正★
         if (actualVisibleTasks.length === 0 && ganttTasks.filter(t => !t.id.startsWith('dummy-')).length === 0 ) {
             const noGanttMessage = document.createElement('p');
             noGanttMessage.textContent = 'No tasks with scheduled dates to display in Gantt chart.';
@@ -708,27 +712,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/get_tasks?sort_by=${sortBy}`);
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`); 
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
-            const tasks = await response.json();
-            renderTasks(tasks); 
+            const fetchedTasks = await response.json(); // サーバーから取得したデータ
+
+            activeTasks = fetchedTasks; // ★ここが重要★: グローバル activeTasks を更新
+
+            renderTasks(activeTasks); // ★ グローバル activeTasks を渡す ★
             console.log("fetchAndRenderActiveTasks: Calling renderGraphicalGantt.");
-            renderGraphicalGantt(tasks); 
+            renderGraphicalGantt(activeTasks); // ★ グローバル activeTasks を渡す ★
             
             const activeTasksULElement = document.getElementById('active-tasks-ul');
-            if (activeTasksULElement && sortBy === 'display_order' && tasks.length > 0) {
+            if (activeTasksULElement && sortBy === 'display_order' && activeTasks.length > 0) { // `tasks.length` を `activeTasks.length` に変更
                  if (sortableInstance) {
                     sortableInstance.destroy(); 
                  }
                 sortableInstance = new Sortable(activeTasksULElement, {
                     animation: 150,
-                    ghostClass: 'sortable-ghost', 
-                    chosenClass: 'sortable-chosen', 
-                    dragClass: 'sortable-drag', 
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
                     onEnd: async function (evt) {
-                        const parentEl = evt.to; 
+                        const parentEl = evt.to;
                         const orderedIds = Array.from(parentEl.children).map(child => child.dataset.taskId);
-                        
+
                         try {
                             const sortResponse = await fetch('/update_task_order', {
                                 method: 'POST',
@@ -738,18 +745,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!sortResponse.ok) {
                                 const err = await sortResponse.json();
                                 console.error('Failed to update task order:', err.error);
-                                fetchAndRenderActiveTasks(); 
+                                fetchAndRenderActiveTasks(); // エラー時は元の順序に戻す
                                 alert(`Error updating task order: ${err.error || 'Server error'}`);
                             } else {
                                 console.log('Task order updated successfully.');
-                                if (sortBy !== 'display_order') { 
-                                    // 別のソート順で表示していた場合は、display_orderに戻す
-                                    fetchAndRenderActiveTasks('display_order'); 
-                                }
+                                // ★NEW: サーバー更新成功時も、必ず画面を再取得して更新する★
+                                fetchAndRenderActiveTasks();
+                                // prev: if (sortBy !== 'display_order') { fetchAndRenderActiveTasks('display_order'); }
+                                // 　　　↑これだと `sortBy` が `display_order` の場合に実行されない。
                             }
                         } catch (error) {
                             console.error('Error sending task order:', error);
-                            fetchAndRenderActiveTasks(); 
+                            fetchAndRenderActiveTasks(); // エラー時も再取得
                             alert('Error sending task order to server.');
                         }
                     },
@@ -774,7 +781,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const tasks = await response.json();
-            renderCompletedTasks(tasks);
+            completedTasks = tasks; // ★ 追加 ★
+            renderCompletedTasks(completedTasks); // 既存
         } catch (error) {
             console.error('Error fetching completed tasks:', error);
             completedTasksListArea.innerHTML = `<p class="text-red-600">Error loading completed tasks: ${error.message}</p>付け`; 
@@ -789,7 +797,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             const tasks = await response.json();
-            renderDeletedTasks(tasks);
+            deletedTasks = tasks; // ★ 追加 ★
+            renderDeletedTasks(deletedTasks); // 既存
         } catch (error) {
             console.error('Error fetching deleted tasks:', error);
             deletedTasksListArea.innerHTML = `<p class="text-red-600">Error loading deleted tasks: ${error.message}</p>`; 
