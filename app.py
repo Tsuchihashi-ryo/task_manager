@@ -457,4 +457,4 @@ if __name__ == '__main__':
     # このブロックでのみデータベースを初期化するように変更
     init_database() # <-- init_database()の呼び出しをここに移動
     # Run the Flask development server
-    app.run(debug=True) # debug=True enables auto-reloading and debugger
+    app.run(debug=True, host="0.0.0.0", port=8080)
